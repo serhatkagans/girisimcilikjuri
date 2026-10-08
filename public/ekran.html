@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Canlı Sıralama</title>
+<title>Demo Day Sunum Listesi · ETKİM Genç Tekno Girişimcilik Kampı</title>
 <style>
   :root {
     --bg: #0f172a; --panel: #111c33; --panel2: #16233f; --line: #24345a; --grid: #1c2a49;
@@ -14,6 +14,9 @@
   body { margin: 0; font-family: "Segoe UI", system-ui, sans-serif; background: radial-gradient(circle at 15% 0%, #1e2b55 0%, var(--bg) 55%); color: var(--text); overflow: hidden; }
   header { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 14px 28px; border-bottom: 1px solid var(--line); }
   header h1 { margin: 0; font-size: 24px; letter-spacing: .01em; }
+  .brand { display: flex; align-items: center; gap: 16px; min-width: 0; }
+  .logo { height: 46px; background: #fff; border-radius: 10px; padding: 5px 10px; flex: none; }
+  header h1 em { font-style: normal; color: var(--accent); }
   header h1 small { display: block; font-size: 13px; color: var(--muted); font-weight: 400; }
   .hright { display: flex; align-items: center; gap: 20px; color: var(--muted); font-size: 14px; }
   .live { display: inline-flex; align-items: center; gap: 8px; }
@@ -22,7 +25,7 @@
   @keyframes pulse { 70% { box-shadow: 0 0 0 10px rgba(52,211,153,0); } 100% { box-shadow: 0 0 0 0 rgba(52,211,153,0); } }
   .fs { background: transparent; border: 1px solid var(--line); color: var(--muted); border-radius: 8px; padding: 6px 10px; cursor: pointer; font: inherit; }
 
-  main { display: grid; grid-template-columns: minmax(0, 1fr) 380px; gap: 20px; padding: 18px 28px; height: calc(100vh - 76px); }
+  main { display: grid; grid-template-columns: minmax(0, 1fr) 380px; gap: 20px; padding: 18px 28px; height: calc(100vh - 76px - 52px); }
   .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 16px 18px; min-height: 0; display: flex; flex-direction: column; }
   .panel h2 { margin: 0 0 10px; font-size: 14px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: .05em; display: flex; justify-content: space-between; }
 
@@ -50,6 +53,35 @@
   @keyframes hit { 0% { background: rgba(34,211,238,.45); } 100% { background: transparent; } }
   .row .move { font-size: 11px; margin-left: 6px; font-weight: 700; }
   .row .move.up { color: #34d399; } .row .move.down { color: #f87171; }
+
+  /* Sunum durumu: sahnedeki il bekleme etiketi */
+  .row .track .lab { position: absolute; right: 6px; top: 50%; transform: translateY(-50%); font-size: 11px; font-weight: 700; letter-spacing: .06em; padding: 2px 8px; border-radius: 999px; white-space: nowrap; }
+  .row.pending { opacity: .45; }
+  .row.pending .lab { border: 1px solid var(--line); color: var(--muted); }
+  .row.onstage { box-shadow: inset 4px 0 0 #fb923c; }
+  .row.onstage .lab { background: #fb923c; color: #0b1020; }
+
+  /* Sağ: sahnedeki ekip */
+  .stage { border-radius: 12px; padding: 12px 16px; margin-bottom: 14px; background: linear-gradient(135deg, rgba(251,146,60,.18), rgba(34,211,238,.08)); border: 1px solid rgba(251,146,60,.55); }
+  .stage.anim { animation: enter .7s cubic-bezier(.2,1.4,.4,1); }
+  .stage .lbl { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 800; letter-spacing: .14em; color: #fb923c; }
+  .stage .lbl i { width: 9px; height: 9px; border-radius: 50%; background: #f87171; animation: pulseRed 1.4s infinite; }
+  @keyframes pulseRed { 0% { box-shadow: 0 0 0 0 rgba(248,113,113,.7); } 70% { box-shadow: 0 0 0 9px rgba(248,113,113,0); } }
+  .stage .now { font-size: 38px; font-weight: 900; line-height: 1.1; margin: 2px 0 6px; }
+  .stage .vs { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 14px; }
+  .stage .wt { font-size: 12px; color: var(--muted); margin-top: 4px; min-height: 1em; }
+  .stage .nx { display: flex; justify-content: space-between; align-items: baseline; margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--line); font-size: 13px; color: var(--muted); }
+  .stage .nx b { color: var(--text); font-size: 17px; margin-left: 6px; }
+  .stage.done { border-color: #34d399; background: linear-gradient(135deg, rgba(52,211,153,.18), rgba(34,211,238,.08)); }
+  .stage.done .lbl { color: #34d399; }
+
+  /* Alt bant */
+  .foot { height: 52px; display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 0 28px; border-top: 1px solid var(--line); background: rgba(11,18,36,.6); color: var(--muted); font-size: 14px; }
+  .foot .sp { display: flex; align-items: center; gap: 10px; min-width: 0; overflow: hidden; }
+  .foot .sp img { height: 36px; max-width: 140px; object-fit: contain; background: #fff; border-radius: 6px; padding: 3px 8px; }
+  .foot .ev { text-align: center; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .foot .ev b { color: var(--text); }
+  .foot .clock { font-size: 20px; font-weight: 700; color: var(--text); font-variant-numeric: tabular-nums; }
 
   /* Sağ: son oy */
   .last { position: relative; overflow: hidden; border-radius: 12px; padding: 16px; background: linear-gradient(135deg, rgba(34,211,238,.10), rgba(167,139,250,.10)); border: 1px solid var(--line); }
@@ -171,6 +203,7 @@
     .cols, .row { grid-template-columns: 34px 110px minmax(0, 1fr) 62px; }
     .cols .pj, .row .per { display: none; }
     header { flex-wrap: wrap; padding: 12px 16px; } main { padding: 16px; }
+    .foot { height: auto; flex-wrap: wrap; padding: 10px 16px; } .foot .ev { white-space: normal; }
   }
 </style>
 </head>
@@ -179,7 +212,7 @@
 <canvas id="confetti"></canvas>
 <div id="fx"></div>
 <header>
-  <h1><span class="trophy">🏆</span> Girişimcilik Değerlendirmesi — Canlı Sıralama<small id="progress">Bağlanıyor…</small></h1>
+  <div class="brand"><img class="logo" src="etkim.png" alt="ETKİM"><h1>Genç Tekno Girişimcilik Kampı <span class="trophy">🏆</span> <em>Demo Day Sunum Listesi</em><small id="progress">Bağlanıyor…</small></h1></div>
   <div class="hright">
     <span class="live off" id="live"><i></i><span>Canlı</span></span>
     <a class="fs" href="juri" style="text-decoration:none">🔑 Jüri Girişi</a>
@@ -188,11 +221,12 @@
 </header>
 <main>
   <section class="panel">
-    <h2><span>Genel Sıralama</span><span id="maxNote"></span></h2>
+    <h2><span>Demo Day Sıralaması</span><span id="maxNote"></span></h2>
     <div class="cols"><span>Sıra</span><span>Grup</span><span>Jüri ortalaması</span><span class="r pj">Oy veren jüri</span><span class="r">Ortalama</span></div>
     <div id="board"></div>
   </section>
   <aside class="panel">
+    <div class="stage" id="stage"></div>
     <h2>Liderler</h2>
     <div class="podium" id="podium"></div>
     <h2>Son Onaylanan Oy</h2>
@@ -200,6 +234,11 @@
     <ul class="feed" id="feed"></ul>
   </aside>
 </main>
+<footer class="foot">
+  <div class="sp" id="sponsors"></div>
+  <div class="ev" id="evinfo"></div>
+  <div class="clock" id="clock"></div>
+</footer>
 <div class="detail hidden" id="detail"></div>
 
 <script>
@@ -208,7 +247,7 @@ const MEDAL = ['🥇', '🥈', '🥉'];
 const SHORT = ['Girişimcilik', 'Ekip Kurma', 'Yenilikçilik', 'Risk Yön.', 'Kanvas', 'Finansman', 'Sunum'];
 const fmt = v => v.toLocaleString('tr-TR', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
 let S = null, prevRank = {}, rows = {}, lastShownId = null, leader = null, queue = Promise.resolve();
-let openGroup = null, lastCard = null, podKey = '';
+let openGroup = null, lastCard = null, podKey = '', stageKey = null;
 const wait = ms => new Promise(r => setTimeout(r, ms));
 const juryName = id => (S.juries.find(j => j.id === id) || { name: id }).name;
 
@@ -259,6 +298,36 @@ function stats(g) {
   return { g, per, n: done.length, avg };
 }
 
+// Sahnedeki ekip: sunum sırasında (S.groups) tüm jürilerin henüz oylamadığı ilk il.
+// Beş jüri de oy verince sahne kendiliğinden sıradaki ile geçer.
+function stageInfo() {
+  const J = S.juries.length;
+  const open = S.groups.filter(g => stats(g).n < J);
+  return { cur: open[0] || null, next: open[1] || null, left: Math.max(0, open.length - 1) };
+}
+
+const shortName = n => n.replace(/^(Prof\.|Doç\.|Dr\.|Öğr\. Gör\.|\s)+/g, '');
+
+function renderStage(sg) {
+  const el = $('#stage'), J = S.juries.length;
+  const changed = stageKey !== null && stageKey !== sg.cur;
+  stageKey = sg.cur;
+  if (!sg.cur) {
+    el.className = 'stage done' + (changed ? ' anim' : '');
+    el.innerHTML = `<div class="lbl">✓ DEMO DAY</div><div class="now">Tüm sunumlar tamamlandı</div>`;
+    return;
+  }
+  const st = stats(sg.cur);
+  const waiting = S.juries.filter((j, k) => !st.per[k]).map(j => shortName(j.name));
+  el.className = 'stage' + (changed ? ' anim' : '');
+  el.innerHTML = `<div class="lbl"><i></i>ŞİMDİ SAHNEDE</div>
+    <div class="now">🎤 ${sg.cur}</div>
+    <div class="vs"><span>${st.n ? `${st.n} / ${J} jüri oy verdi` : 'Jüri oylaması bekleniyor'}</span>
+      <span class="dots">${Array.from({ length: J }, (_, k) => `<i class="${k < st.n ? 'on' : ''}"></i>`).join('')}</span></div>
+    <div class="wt">${st.n ? `Bekleniyor: ${waiting.join(', ')}` : ''}</div>
+    <div class="nx"><span>Sıradaki<b>${sg.next || '—'}</b></span><span>${sg.left ? `${sg.left} ekip daha` : 'Son sunum'}</span></div>`;
+}
+
 function compute() {
   const order = Object.fromEntries(S.groups.map((g, i) => [g, i]));
   const list = S.groups.map(stats);
@@ -289,11 +358,12 @@ function render(highlight) {
   const nVotes = S.juries.reduce((a, j) => a + Object.keys(S.votes[j.id]).length, 0);
   $('#progress').textContent = `${nVotes} / ${S.groups.length * J} oy kullanıldı · ayrıntı için ile tıklayın`;
 
+  const sg = stageInfo();
   list.forEach((it, idx) => {
     let r = rows[it.g];
     if (!r) {
       r = document.createElement('div');
-      r.innerHTML = `<span class="rk"></span><span class="nm"></span><div class="track"><span class="seg"></span></div><span class="per"><span class="dots">${'<i></i>'.repeat(J)}</span></span><span class="tot"></span>`;
+      r.innerHTML = `<span class="rk"></span><span class="nm"></span><div class="track"><span class="seg"></span><span class="lab"></span></div><span class="per"><span class="dots">${'<i></i>'.repeat(J)}</span></span><span class="tot"></span>`;
       r.dataset.g = it.g;
       r.onclick = () => openDetail(it.g);
       board.appendChild(r);
@@ -303,7 +373,9 @@ function render(highlight) {
     const mv = before != null && it.n ? before - idx : 0;
     r.style.height = rowH + 'px';
     r.style.transform = `translateY(${idx * rowH}px)`;
-    r.className = 'row' + (it.n && idx < 3 ? ' top' + (idx + 1) : '') + (highlight && mv > 0 ? ' rising' : '') + (highlight && mv < 0 ? ' falling' : '');
+    r.className = 'row' + (it.n && idx < 3 ? ' top' + (idx + 1) : '') + (highlight && mv > 0 ? ' rising' : '') + (highlight && mv < 0 ? ' falling' : '')
+      + (it.g === sg.cur ? ' onstage' : !it.n ? ' pending' : '');
+    r.querySelector('.lab').textContent = it.g === sg.cur ? '🎤 SAHNEDE' : !it.n ? 'SUNUM BEKLİYOR' : '';
     if (highlight && mv) setTimeout(() => r.classList.remove('rising', 'falling'), 1600);
     r.querySelector('.rk').innerHTML = it.n ? (idx < 3 ? `<span class="medal">${MEDAL[idx]}</span>` : idx + 1) : '–';
     r.querySelector('.nm').innerHTML = it.g + (mv && highlight ? `<span class="move ${mv > 0 ? 'up' : 'down'}">${mv > 0 ? '▲' : '▼'}${Math.abs(mv)}</span>` : '');
@@ -320,6 +392,7 @@ function render(highlight) {
   });
   prevRank = Object.fromEntries(list.map((it, i) => [it.g, i]));
   renderPodium(list);
+  renderStage(sg);
   if (openGroup) renderDetail(openGroup, false);
   return list;
 }
@@ -457,6 +530,7 @@ function connect() {
     const data = JSON.parse(m.data);
     if (!S) {
       S = data;
+      renderFooter();
       const list = render();
       leader = list[0] && list[0].n ? list[0].g : null;
       const newest = renderFeed();
@@ -472,6 +546,15 @@ function connect() {
     });
   };
 }
+
+// Alt bant: destekçi logoları, etkinlik bilgisi, saat
+function renderFooter() {
+  $('#sponsors').innerHTML = (S.sponsors || []).map(f => `<img src="logolar/${encodeURIComponent(f)}" alt="">`).join('');
+  const ev = S.event || {};
+  $('#evinfo').innerHTML = ['<b>ETKİM Genç Tekno Girişimcilik Kampı</b>', 'Demo Day', ev.tarih, ev.yer].filter(Boolean).join(' · ');
+}
+function tickClock() { $('#clock').textContent = new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }); }
+tickClock(); setInterval(tickClock, 10000);
 
 $('#fs').onclick = () => document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen();
 addEventListener('resize', () => { sizeCanvas(); S && render(); });

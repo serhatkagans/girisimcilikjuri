@@ -15,6 +15,15 @@ const DB_FILE = path.join(DATA_DIR, 'juri.db');
 const PUBLIC_DIR = path.join(__dirname, 'public');
 const TRUST_PROXY = process.env.TRUST_PROXY === 'true';
 
+// Ana ekranın alt bandı: etkinlik bilgisi .env'den, destekçi logoları public/logolar/ klasöründen
+const EVENT = { tarih: process.env.ETKINLIK_TARIH || '', yer: process.env.ETKINLIK_YER || '' };
+const LOGO_DIR = path.join(PUBLIC_DIR, 'logolar');
+function sponsorLogos() {
+  try {
+    return fs.readdirSync(LOGO_DIR).filter(f => /\.(png|jpe?g|svg|webp)$/i.test(f)).sort();
+  } catch { return []; }
+}
+
 // Ortak jüri şifresi kodda tutulmaz: .env içindeki JURI_SIFRE
 const SIFRE = process.env.JURI_SIFRE;
 if (!SIFRE) {
@@ -108,7 +117,7 @@ const clients = new Set();  // SSE bağlantıları
 let lastEvent = null;       // son oy (efekt için)
 
 function state() {
-  return { groups: GROUPS, criteria: CRITERIA, juries: JURIES, votes: loadVotes(), lastEvent };
+  return { groups: GROUPS, criteria: CRITERIA, juries: JURIES, votes: loadVotes(), lastEvent, event: EVENT, sponsors: sponsorLogos() };
 }
 
 function broadcast() {
@@ -136,7 +145,7 @@ function auth(req) {
   return token ? sessions.get(token) : null;
 }
 
-const MIME = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8' };
+const MIME = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.svg': 'image/svg+xml', '.webp': 'image/webp' };
 
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, 'http://x');
