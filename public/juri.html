@@ -48,7 +48,8 @@
   header { display: flex; align-items: center; justify-content: space-between; padding: 14px 24px; border-bottom: 1px solid var(--line); background: rgba(15,23,42,.7); position: sticky; top: 0; z-index: 5; backdrop-filter: blur(6px); }
   header h1 { margin: 0; font-size: 18px; }
   header .who { display: flex; align-items: center; gap: 12px; color: var(--muted); }
-  header .who b { color: var(--accent); }
+  header .who b { color: var(--accent); font-size: 17px; }
+  @media (max-width: 600px) { header { flex-wrap: wrap; gap: 8px; } header .who { font-size: 14px; } }
   main { display: grid; grid-template-columns: 260px minmax(0, 1fr) 320px; gap: 20px; padding: 20px 24px; max-width: 1500px; margin: 0 auto; }
   .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 18px; }
   .panel h2 { margin: 0 0 12px; font-size: 15px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: .04em; }
@@ -119,7 +120,7 @@
     <h1>Jüri Girişi</h1>
     <p>Gençlik Girişimcilik Değerlendirmesi</p>
     <label for="u">Kullanıcı adı</label>
-    <input id="u" required autofocus>
+    <input id="u" required autofocus placeholder="isim ve soyisim bitişik, ör. alidemir" autocapitalize="none" spellcheck="false">
     <label for="p">Şifre</label>
     <input id="p" type="password" required>
     <div class="err" id="loginErr"></div>
@@ -130,7 +131,7 @@
 <section id="app" class="hidden">
   <header>
     <h1>Jüri Değerlendirme Paneli</h1>
-    <div class="who"><span>Jüri: <b id="who"></b></span><button class="btn ghost" id="logout">Çıkış</button></div>
+    <div class="who"><span>Hoş geldiniz, <b id="who"></b></span><button class="btn ghost" id="logout">Çıkış</button></div>
   </header>
   <main>
     <aside class="panel">
@@ -207,7 +208,7 @@ $('#logout').onclick = logout;
 
 async function start() {
   data = await api('api/my-votes');
-  $('#who').textContent = data.user;
+  $('#who').textContent = data.name;
   $('#login').classList.add('hidden'); $('#app').classList.remove('hidden');
   $('#maxTotal').textContent = data.criteria.reduce((a, c) => a + c.max, 0);
   buildCriteria();

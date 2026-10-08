@@ -21,7 +21,24 @@ if (!SIFRE) {
   console.error('JURI_SIFRE tanımlı değil. .env.example dosyasını .env olarak kopyalayıp şifreyi yazın.');
   process.exit(1);
 }
-const USERS = { juri1: SIFRE, juri2: SIFRE, juri3: SIFRE };
+
+// Jüri üyeleri: kullanıcı adı = isim + soyisim, bitişik, küçük harf, Türkçe karaktersiz
+const JURIES = [
+  { id: 'alidemir', name: 'Prof. Dr. Ali DEMİR' },
+  { id: 'yasinozarslan', name: 'Prof. Dr. Yasin ÖZARSLAN' },
+  { id: 'eliftunalicaliskan', name: 'Prof. Dr. Elif TUNALI ÇALIŞKAN' },
+  { id: 'yeldatufekci', name: 'Yelda TÜFEKÇİ' },
+  { id: 'samikaraoglan', name: 'Sami KARAOĞLAN' }
+];
+const USERS = Object.fromEntries(JURIES.map(j => [j.id, SIFRE]));
+const JURY_NAME = Object.fromEntries(JURIES.map(j => [j.id, j.name]));
+
+// Kullanıcı adı Türkçe karakterle ya da boşluklu yazılsa da kabul edilir:
+// "Ali Demir", "alidemir", "ALİDEMİR" -> "alidemir"
+function normalizeUser(u) {
+  const map = { ç: 'c', ğ: 'g', ı: 'i', ö: 'o', ş: 's', ü: 'u', â: 'a', î: 'i', û: 'u' };
+  return String(u || '').toLocaleLowerCase('tr').replace(/[çğıöşüâîû]/g, c => map[c]).replace(/[^a-z0-9]/g, '');
+}
 
 function safeEqual(a, b) {
   const x = Buffer.from(String(a)), y = Buffer.from(String(b));
@@ -36,10 +53,11 @@ function clientIp(req) {
   return fwd ? fwd.split(',')[0].trim() : req.socket.remoteAddress;
 }
 
+// Jürinin oylama sırası
 const GROUPS = [
-  'Muş', 'Aydın', 'Trabzon', 'Batman', 'Kütahya', 'Edirne', 'Gaziantep', 'Manisa',
-  'Bartın', 'Kahramanmaraş', 'Denizli', 'Ankara', 'Samsun', 'Bingöl', 'İzmir',
-  'Niğde', 'Bursa', 'Hatay', 'Kırklareli', 'Mersin'
+  'Trabzon', 'Mersin', 'Edirne', 'Bartın', 'Gaziantep', 'Bursa', 'İzmir', 'Kırklareli',
+  'Kahramanmaraş', 'Kütahya', 'Manisa', 'Samsun', 'Batman', 'Ankara', 'Hatay',
+  'Niğde', 'Aydın', 'Muş', 'Denizli', 'Bingöl'
 ];
 
 const CRITERIA = [
@@ -90,7 +108,7 @@ const clients = new Set();  // SSE bağlantıları
 let lastEvent = null;       // son oy (efekt için)
 
 function state() {
-  return { groups: GROUPS, criteria: CRITERIA, juries: Object.keys(USERS), votes: loadVotes(), lastEvent };
+  return { groups: GROUPS, criteria: CRITERIA, juries: JURIES, votes: loadVotes(), lastEvent };
 }
 
 function broadcast() {
@@ -132,12 +150,12 @@ const server = http.createServer(async (req, res) => {
         return json(res, 429, { error: 'Çok fazla hatalı deneme. Birkaç dakika sonra tekrar deneyin.' });
       }
       const { username, password } = await readBody(req);
-      const u = String(username || '').trim().toLowerCase();
+      const u = normalizeUser(username);
       if (USERS[u] && safeEqual(USERS[u], password || '')) {
         failures.delete(ip);
         const token = crypto.randomBytes(24).toString('hex');
         sessions.set(token, u);
-        return json(res, 200, { token, user: u });
+        return json(res, 200, { token, user: u, name: JURY_NAME[u] });
       }
       failures.set(ip, { count: (f ? f.count : 0) + 1, until: now + FAIL_WINDOW });
       return json(res, 401, { error: 'Kullanıcı adı veya şifre hatalı' });
@@ -155,7 +173,7 @@ const server = http.createServer(async (req, res) => {
     if (req.method === 'GET' && url.pathname === '/api/my-votes') {
       const user = auth(req);
       if (!user) return json(res, 401, { error: 'Oturum geçersiz' });
-      return json(res, 200, { user, groups: GROUPS, criteria: CRITERIA, votes: loadVotes()[user] });
+      return json(res, 200, { user, name: JURY_NAME[user], groups: GROUPS, criteria: CRITERIA, votes: loadVotes()[user] });
     }
 
     if (req.method === 'POST' && url.pathname === '/api/vote') {
@@ -175,7 +193,7 @@ const server = http.createServer(async (req, res) => {
       const total = scores.reduce((a, b) => a + b, 0);
       const updated = !!selectExists.get(user, group);
       upsertVote.run(user, group, ...scores, total, Date.now());
-      lastEvent = { id: Date.now(), jury: user, group, scores, total, updated };
+      lastEvent = { id: Date.now(), jury: user, juryName: JURY_NAME[user], group, scores, total, updated };
       broadcast();
       return json(res, 200, { ok: true, total });
     }
@@ -188,7 +206,7 @@ const server = http.createServer(async (req, res) => {
       // Jüri yalnızca kendi verdiği puanı silebilir
       const { changes } = deleteVote.run(user, group);
       if (!changes) return json(res, 404, { error: 'Bu grup için kayıtlı puanınız yok' });
-      lastEvent = { id: Date.now(), type: 'deleted', jury: user, group };
+      lastEvent = { id: Date.now(), type: 'deleted', jury: user, juryName: JURY_NAME[user], group };
       broadcast();
       return json(res, 200, { ok: true });
     }

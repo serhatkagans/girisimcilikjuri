@@ -1,6 +1,6 @@
 # Girişimcilik Jüri Değerlendirme Sistemi
 
-Üç jürinin 20 grubu yedi kritere göre puanladığı, sonuçların ana ekranda canlı ve
+Beş jürinin 20 ili yedi kritere göre puanladığı, sonuçların ana ekranda canlı ve
 efektli gösterildiği web uygulaması. Bağımlılık yok: Node.js 22.13+ yeterli
 (veritabanı Node'un yerleşik SQLite modülü).
 
@@ -12,7 +12,7 @@ efektli gösterildiği web uygulaması. Bağımlılık yok: Node.js 22.13+ yeter
 | Adres | Ne |
 |---|---|
 | `http://localhost:3000/` | Ana ekran: canlı sıralama, giriş gerekmez |
-| `http://localhost:3000/juri` | Jüri paneli: `juri1`, `juri2`, `juri3` |
+| `http://localhost:3000/juri` | Jüri paneli: kullanıcı adı isim+soyisim bitişik, küçük harf (ör. `alidemir`) |
 
 ## Puanlama
 
@@ -26,7 +26,8 @@ efektli gösterildiği web uygulaması. Bağımlılık yok: Node.js 22.13+ yeter
 | Girişimine Finansman Kaynak Bulma / Yönetme | 1–15 |
 | Geliştirilen Fikrin (Girişimin) Sunumu | 1–15 |
 
-Bir jürinin bir gruba verebileceği en yüksek puan 100, grubun toplamı en fazla 300.
+Bir jürinin bir ile verebileceği en yüksek puan 100. Ana ekranda puan veren jürilerin
+ortalaması gösterilir; ile tıklayınca beş jürinin kriter kriter puanları açılır.
 Her jüri kendi puanını istediği zaman değiştirebilir ya da silebilir.
 
 ## Veri

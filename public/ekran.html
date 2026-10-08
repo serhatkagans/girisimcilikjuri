@@ -7,8 +7,7 @@
 <style>
   :root {
     --bg: #0f172a; --panel: #111c33; --panel2: #16233f; --line: #24345a; --grid: #1c2a49;
-    --text: #e8eefc; --muted: #8fa3c7; --accent: #22d3ee;
-    --j1: #3987e5; --j2: #d95926; --j3: #199e70;
+    --text: #e8eefc; --muted: #8fa3c7; --accent: #22d3ee; --bar: #3987e5;
   }
   * { box-sizing: border-box; }
   html, body { height: 100%; }
@@ -21,31 +20,32 @@
   .live i { width: 10px; height: 10px; border-radius: 50%; background: #34d399; box-shadow: 0 0 0 0 rgba(52,211,153,.7); animation: pulse 1.6s infinite; }
   .live.off i { background: #f87171; animation: none; }
   @keyframes pulse { 70% { box-shadow: 0 0 0 10px rgba(52,211,153,0); } 100% { box-shadow: 0 0 0 0 rgba(52,211,153,0); } }
-  .legend { display: flex; gap: 14px; }
-  .legend span { display: inline-flex; align-items: center; gap: 6px; color: var(--text); }
-  .legend b { width: 12px; height: 12px; border-radius: 3px; display: inline-block; }
   .fs { background: transparent; border: 1px solid var(--line); color: var(--muted); border-radius: 8px; padding: 6px 10px; cursor: pointer; font: inherit; }
 
   main { display: grid; grid-template-columns: minmax(0, 1fr) 380px; gap: 20px; padding: 18px 28px; height: calc(100vh - 76px); }
   .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 16px 18px; min-height: 0; display: flex; flex-direction: column; }
   .panel h2 { margin: 0 0 10px; font-size: 14px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: .05em; display: flex; justify-content: space-between; }
 
-  /* Sıralama + yığılmış çubuk grafik */
-  .cols { display: grid; grid-template-columns: 44px 150px minmax(0, 1fr) 150px 64px; gap: 12px; font-size: 12px; color: var(--muted); padding: 0 8px 6px; border-bottom: 1px solid var(--line); }
+  /* Sıralama + ortalama çubuğu */
+  .cols { display: grid; grid-template-columns: 44px 160px minmax(0, 1fr) 96px 78px; gap: 12px; font-size: 12px; color: var(--muted); padding: 0 8px 6px; border-bottom: 1px solid var(--line); }
   .cols .r { text-align: right; }
   #board { position: relative; flex: 1; min-height: 0; }
-  .row { position: absolute; left: 0; right: 0; display: grid; grid-template-columns: 44px 150px minmax(0, 1fr) 150px 64px; gap: 12px; align-items: center; padding: 0 8px; border-radius: 8px; transition: transform .9s cubic-bezier(.3,.9,.3,1), background .4s; }
-  .row:nth-child(odd) { }
+  .row { position: absolute; left: 0; right: 0; display: grid; grid-template-columns: 44px 160px minmax(0, 1fr) 96px 78px; gap: 12px; align-items: center; padding: 0 8px; border-radius: 8px; cursor: pointer; transition: transform .9s cubic-bezier(.3,.9,.3,1), background .4s; }
+  .row:hover { outline: 1px solid rgba(34,211,238,.5); background-color: rgba(34,211,238,.06); }
+  .row:hover .nm::after { content: " 🔍"; font-size: 13px; }
   .row .rk { font-weight: 800; font-size: 18px; color: var(--muted); font-variant-numeric: tabular-nums; text-align: center; }
   .row.top1 .rk { color: #fbbf24; } .row.top2 .rk { color: #cbd5e1; } .row.top3 .rk { color: #d97706; }
   .row .nm { font-weight: 600; font-size: 17px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .row .track { position: relative; height: 60%; max-height: 22px; display: flex; gap: 2px; background: linear-gradient(90deg, var(--grid) 1px, transparent 1px) 0 0 / 10% 100%; }
-  .row .seg { height: 100%; transition: width .9s cubic-bezier(.2,.8,.2,1); min-width: 0; cursor: default; }
-  .row .seg:last-of-type, .row .seg.end { border-radius: 0 4px 4px 0; }
-  .row .seg.j1 { background: var(--j1); } .row .seg.j2 { background: var(--j2); } .row .seg.j3 { background: var(--j3); }
-  .row .per { font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; }
-  .row .per em { font-style: normal; color: var(--text); }
-  .row .tot { font-size: 22px; font-weight: 800; text-align: right; font-variant-numeric: tabular-nums; }
+  .row .track { position: relative; height: 60%; max-height: 22px; display: flex; background: linear-gradient(90deg, var(--grid) 1px, transparent 1px) 0 0 / 10% 100%; }
+  .row .seg { height: 100%; width: 0; background: linear-gradient(90deg, var(--bar), #22d3ee); border-radius: 0 4px 4px 0; transition: width .9s cubic-bezier(.2,.8,.2,1); }
+  .row.top1 .seg { background: linear-gradient(90deg, #f59e0b, #fde68a); }
+  .dots { display: inline-flex; gap: 4px; justify-content: flex-end; align-items: center; }
+  .dots i { width: 9px; height: 9px; border-radius: 50%; border: 1.5px solid var(--muted); transition: background .4s, border-color .4s, transform .4s; }
+  .dots i.on { background: #34d399; border-color: #34d399; }
+  .dots i.new { animation: dotPop .8s ease; }
+  @keyframes dotPop { 50% { transform: scale(1.9); } }
+  .row .per { text-align: right; }
+  .row .tot { font-size: 21px; font-weight: 800; text-align: right; font-variant-numeric: tabular-nums; }
   .row.hit { background: rgba(34,211,238,.14); animation: hit 2.4s ease; }
   @keyframes hit { 0% { background: rgba(34,211,238,.45); } 100% { background: transparent; } }
   .row .move { font-size: 11px; margin-left: 6px; font-weight: 700; }
@@ -55,21 +55,19 @@
   .last { position: relative; overflow: hidden; border-radius: 12px; padding: 16px; background: linear-gradient(135deg, rgba(34,211,238,.10), rgba(167,139,250,.10)); border: 1px solid var(--line); }
   .last.empty { color: var(--muted); text-align: center; padding: 30px 10px; }
   .last .who { font-size: 13px; color: var(--muted); display: flex; align-items: center; gap: 8px; }
-  .last .who b { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
-  .last .grp { font-size: 30px; font-weight: 800; margin: 4px 0 10px; }
-  .last .crit { display: grid; grid-template-columns: 1fr 34px; gap: 2px 8px; margin: 6px 0; font-size: 12.5px; color: var(--muted); }
-  .last .crit .v { text-align: right; color: var(--text); font-weight: 700; font-variant-numeric: tabular-nums; }
-  .last .crit .bar { grid-column: 1 / -1; height: 5px; background: var(--panel2); border-radius: 3px; overflow: hidden; }
-  .last .crit .bar i { display: block; height: 100%; width: 0; background: var(--accent); border-radius: 3px; transition: width .8s ease; }
-  .last .sum { display: flex; justify-content: space-between; align-items: baseline; margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--line); }
+  .last .who b { color: var(--text); }
+  .last .grp { font-size: 30px; font-weight: 800; margin: 4px 0 6px; }
+  .last .sum { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; padding-top: 10px; border-top: 1px solid var(--line); }
+  .last .sum small { display: block; color: var(--muted); font-size: 13px; }
   .last .sum b { font-size: 40px; font-variant-numeric: tabular-nums; }
   .last.anim { animation: enter .7s cubic-bezier(.2,1.4,.4,1); }
   .last.anim::after { content: ""; position: absolute; inset: 0; background: linear-gradient(110deg, transparent 30%, rgba(255,255,255,.18) 50%, transparent 70%); transform: translateX(-100%); animation: shine 1.2s .2s ease; pointer-events: none; }
   @keyframes enter { from { transform: translateY(-20px) scale(.95); opacity: 0; } to { transform: none; opacity: 1; } }
   @keyframes shine { to { transform: translateX(100%); } }
   .feed { list-style: none; margin: 14px 0 0; padding: 0; overflow: auto; flex: 1; min-height: 0; }
-  .feed li { display: grid; grid-template-columns: 10px 1fr auto; gap: 10px; align-items: center; padding: 8px 4px; border-bottom: 1px solid var(--grid); font-size: 14px; animation: enter .5s ease; }
-  .feed li b { width: 10px; height: 10px; border-radius: 3px; }
+  .feed li { display: grid; grid-template-columns: 8px 1fr auto; gap: 10px; align-items: center; padding: 8px 4px; border-bottom: 1px solid var(--grid); font-size: 14px; animation: enter .5s ease; }
+  .feed li b { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); }
+  .feed li.del b { background: #f87171; }
   .feed li .t { color: var(--muted); font-size: 12px; }
   .feed li .p { font-weight: 700; font-variant-numeric: tabular-nums; }
 
@@ -121,6 +119,7 @@
   .splash .g { font-size: 72px; font-weight: 900; line-height: 1.1; margin: 6px 0; background: linear-gradient(90deg, #fde68a, #fff, #a5f3fc); -webkit-background-clip: text; background-clip: text; color: transparent; }
   .splash .p { font-size: 44px; font-weight: 900; }
   .splash .p small { font-size: 20px; color: var(--muted); font-weight: 600; }
+  .splash .who { font-size: 26px; font-weight: 700; color: #fff; margin-top: 4px; }
   @keyframes splashIn {
     0% { transform: scale(.2) rotate(-12deg); opacity: 0; }
     18% { transform: scale(1.08) rotate(2deg); opacity: 1; }
@@ -138,14 +137,38 @@
   .row.drop { animation: drop 1.6s ease; }
   @keyframes drop { 0% { background: rgba(248,113,113,.45); } 100% { background: transparent; } }
 
-  .tip { position: fixed; pointer-events: none; background: #0b1224; border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; font-size: 13px; z-index: 50; box-shadow: 0 8px 24px rgba(0,0,0,.5); display: none; }
-  .tip .k { color: var(--muted); }
+  /* İl ayrıntısı: 5 jürinin puanları */
+  .detail { position: fixed; inset: 0; z-index: 40; background: rgba(2,6,23,.75); display: grid; place-items: center; padding: 16px; animation: fadeIn .25s ease; }
+  .detail.hidden { display: none; }
+  @keyframes fadeIn { from { opacity: 0; } }
+  .dbox { background: var(--panel); border: 1px solid var(--line); border-radius: 18px; width: min(1100px, 100%); max-height: calc(100vh - 32px); overflow: auto; padding: 22px 26px; box-shadow: 0 30px 80px rgba(0,0,0,.6); animation: dIn .45s cubic-bezier(.2,1.3,.3,1); }
+  @keyframes dIn { from { transform: translateY(30px) scale(.94); opacity: 0; } }
+  .dhead { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; margin-bottom: 14px; }
+  .dhead h3 { margin: 0; font-size: 34px; }
+  .dhead h3 small { display: block; font-size: 14px; color: var(--muted); font-weight: 400; margin-top: 2px; }
+  .dright { display: flex; align-items: flex-start; }
+  .davg { text-align: right; }
+  .davg b { font-size: 46px; line-height: 1; font-variant-numeric: tabular-nums; background: linear-gradient(90deg, #fde68a, #fff); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .davg span { display: block; font-size: 13px; color: var(--muted); }
+  .dclose { background: transparent; border: 1px solid var(--line); color: var(--muted); border-radius: 10px; width: 38px; height: 38px; font-size: 18px; cursor: pointer; margin-left: 14px; }
+  .dscroll { overflow-x: auto; }
+  .dtable { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; min-width: 760px; }
+  .dtable th { font-size: 12px; color: var(--muted); font-weight: 600; text-align: center; padding: 8px 6px; border-bottom: 1px solid var(--line); vertical-align: bottom; }
+  .dtable th small { display: block; font-weight: 400; opacity: .8; }
+  .dtable th:first-child, .dtable td:first-child { text-align: left; }
+  .dtable td { text-align: center; padding: 11px 6px; border-bottom: 1px solid var(--grid); font-size: 16px; }
+  .dtable tbody tr { opacity: 0; animation: rowIn .4s ease forwards; }
+  @keyframes rowIn { from { transform: translateX(-16px); opacity: 0; } to { transform: none; opacity: 1; } }
+  .dtable td.name { font-weight: 600; white-space: nowrap; }
+  .dtable td.tot { font-weight: 800; font-size: 19px; color: #fde68a; }
+  .dtable tr.wait td { color: var(--muted); font-style: italic; }
+  .dtable tfoot td { font-weight: 800; color: var(--accent); border-bottom: 0; border-top: 2px solid var(--line); }
 
   @media (max-width: 1100px) {
     body { overflow: auto; }
     main { grid-template-columns: 1fr; height: auto; }
     #board { min-height: 760px; }
-    .cols, .row { grid-template-columns: 34px 110px minmax(0, 1fr) 56px; }
+    .cols, .row { grid-template-columns: 34px 110px minmax(0, 1fr) 62px; }
     .cols .pj, .row .per { display: none; }
     header { flex-wrap: wrap; padding: 12px 16px; } main { padding: 16px; }
   }
@@ -158,7 +181,6 @@
 <header>
   <h1><span class="trophy">🏆</span> Girişimcilik Değerlendirmesi — Canlı Sıralama<small id="progress">Bağlanıyor…</small></h1>
   <div class="hright">
-    <div class="legend" id="legend"></div>
     <span class="live off" id="live"><i></i><span>Canlı</span></span>
     <a class="fs" href="juri" style="text-decoration:none">🔑 Jüri Girişi</a>
     <button class="fs" id="fs" title="Tam ekran">⛶ Tam ekran</button>
@@ -167,7 +189,7 @@
 <main>
   <section class="panel">
     <h2><span>Genel Sıralama</span><span id="maxNote"></span></h2>
-    <div class="cols"><span>Sıra</span><span>Grup</span><span>Jüri puanları (yığılmış)</span><span class="r pj">Jüri 1 · 2 · 3</span><span class="r">Toplam</span></div>
+    <div class="cols"><span>Sıra</span><span>Grup</span><span>Jüri ortalaması</span><span class="r pj">Oy veren jüri</span><span class="r">Ortalama</span></div>
     <div id="board"></div>
   </section>
   <aside class="panel">
@@ -178,16 +200,17 @@
     <ul class="feed" id="feed"></ul>
   </aside>
 </main>
-<div class="tip" id="tip"></div>
+<div class="detail hidden" id="detail"></div>
 
 <script>
 const $ = s => document.querySelector(s);
-const JCOL = { juri1: 'var(--j1)', juri2: 'var(--j2)', juri3: 'var(--j3)' };
-const JHEX = { juri1: '#3987e5', juri2: '#d95926', juri3: '#199e70' };
 const MEDAL = ['🥇', '🥈', '🥉'];
-const jLabel = j => 'Jüri ' + j.replace('juri', '');
+const SHORT = ['Girişimcilik', 'Ekip Kurma', 'Yenilikçilik', 'Risk Yön.', 'Kanvas', 'Finansman', 'Sunum'];
+const fmt = v => v.toLocaleString('tr-TR', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
 let S = null, prevRank = {}, rows = {}, lastShownId = null, leader = null, queue = Promise.resolve();
+let openGroup = null, lastCard = null, podKey = '';
 const wait = ms => new Promise(r => setTimeout(r, ms));
+const juryName = id => (S.juries.find(j => j.id === id) || { name: id }).name;
 
 // Yıldızlı arka plan
 for (let i = 0; i < 60; i++) {
@@ -228,114 +251,159 @@ function step() {
   if (parts.length) requestAnimationFrame(step); else { running = false; cx.clearRect(0, 0, cv.width, cv.height); }
 }
 
+// Ortalama = puan veren jürilerin toplam puanlarının ortalaması (en fazla 100)
+function stats(g) {
+  const per = S.juries.map(j => S.votes[j.id][g] || null);
+  const done = per.filter(Boolean);
+  const avg = done.length ? done.reduce((a, v) => a + v.total, 0) / done.length : 0;
+  return { g, per, n: done.length, avg };
+}
+
 function compute() {
-  const perJ = S.juries.length * S.criteria.reduce((a, c) => a + c.max, 0);
-  const list = S.groups.map(g => {
-    const per = S.juries.map(j => S.votes[j][g] ? S.votes[j][g].total : null);
-    const n = per.filter(v => v != null).length;
-    const total = per.reduce((a, v) => a + (v || 0), 0);
-    return { g, per, n, total, avg: n ? total / n : 0 };
-  });
-  list.sort((a, b) => b.total - a.total || b.avg - a.avg || a.g.localeCompare(b.g, 'tr'));
-  return { list, perJ };
+  const order = Object.fromEntries(S.groups.map((g, i) => [g, i]));
+  const list = S.groups.map(stats);
+  list.sort((a, b) => b.avg - a.avg || b.n - a.n || order[a.g] - order[b.g]);
+  return list;
 }
 
 function countUp(el, to) {
   const from = +el.dataset.val || 0;
   el.dataset.val = to;
-  if (from === to) { el.textContent = to; return; }
+  if (from === to) { el.textContent = to ? fmt(to) : '–'; return; }
   el.classList.remove('bump'); void el.offsetWidth; el.classList.add('bump');
   const t0 = performance.now();
   (function tick(t) {
     const p = Math.min(1, (t - t0) / 1100);
-    el.textContent = Math.round(from + (to - from) * (1 - Math.pow(1 - p, 3)));
+    const v = from + (to - from) * (1 - Math.pow(1 - p, 3));
+    el.textContent = p < 1 || to ? fmt(v) : '–';
     if (p < 1) requestAnimationFrame(tick);
   })(t0);
 }
 
 function render(highlight) {
-  const { list, perJ } = compute();
+  const list = compute();
   const board = $('#board');
   const rowH = Math.max(30, board.clientHeight / S.groups.length);
-  $('#maxNote').textContent = `Azami ${perJ} puan`;
-  const nVotes = S.juries.reduce((a, j) => a + Object.keys(S.votes[j]).length, 0);
-  $('#progress').textContent = `${nVotes} / ${S.groups.length * S.juries.length} oy kullanıldı`;
+  const J = S.juries.length;
+  $('#maxNote').textContent = `${J} jürinin ortalaması · azami 100 puan`;
+  const nVotes = S.juries.reduce((a, j) => a + Object.keys(S.votes[j.id]).length, 0);
+  $('#progress').textContent = `${nVotes} / ${S.groups.length * J} oy kullanıldı · ayrıntı için ile tıklayın`;
 
   list.forEach((it, idx) => {
     let r = rows[it.g];
     if (!r) {
       r = document.createElement('div');
-      r.innerHTML = `<span class="rk"></span><span class="nm"></span><div class="track">${S.juries.map(j => `<span class="seg ${'j' + j.replace('juri', '')}" data-j="${j}"></span>`).join('')}</div><span class="per"></span><span class="tot"></span>`;
+      r.innerHTML = `<span class="rk"></span><span class="nm"></span><div class="track"><span class="seg"></span></div><span class="per"><span class="dots">${'<i></i>'.repeat(J)}</span></span><span class="tot"></span>`;
       r.dataset.g = it.g;
+      r.onclick = () => openDetail(it.g);
       board.appendChild(r);
       rows[it.g] = r;
     }
     const before = prevRank[it.g];
-    const mv = before != null && it.total ? before - idx : 0;
+    const mv = before != null && it.n ? before - idx : 0;
     r.style.height = rowH + 'px';
     r.style.transform = `translateY(${idx * rowH}px)`;
-    r.className = 'row' + (it.total && idx < 3 ? ' top' + (idx + 1) : '') + (highlight && mv > 0 ? ' rising' : '') + (highlight && mv < 0 ? ' falling' : '');
+    r.className = 'row' + (it.n && idx < 3 ? ' top' + (idx + 1) : '') + (highlight && mv > 0 ? ' rising' : '') + (highlight && mv < 0 ? ' falling' : '');
     if (highlight && mv) setTimeout(() => r.classList.remove('rising', 'falling'), 1600);
-    r.querySelector('.rk').innerHTML = it.total ? (idx < 3 ? `<span class="medal">${MEDAL[idx]}</span>` : idx + 1) : '–';
+    r.querySelector('.rk').innerHTML = it.n ? (idx < 3 ? `<span class="medal">${MEDAL[idx]}</span>` : idx + 1) : '–';
     r.querySelector('.nm').innerHTML = it.g + (mv && highlight ? `<span class="move ${mv > 0 ? 'up' : 'down'}">${mv > 0 ? '▲' : '▼'}${Math.abs(mv)}</span>` : '');
-    const segs = r.querySelectorAll('.seg');
-    it.per.forEach((v, k) => { segs[k].style.width = ((v || 0) / perJ * 100) + '%'; segs[k].dataset.v = v ?? ''; });
-    r.querySelector('.per').innerHTML = it.per.map(v => v == null ? '—' : `<em>${v}</em>`).join(' · ');
-    countUp(r.querySelector('.tot'), it.total);
+    r.querySelector('.seg').style.width = it.avg + '%';
+    const dots = r.querySelectorAll('.dots i');
+    dots.forEach((d, k) => {
+      const on = k < it.n;
+      if (on && !d.classList.contains('on') && highlight === it.g) { d.classList.add('new'); setTimeout(() => d.classList.remove('new'), 900); }
+      d.classList.toggle('on', on);
+    });
+    r.title = `${it.n} / ${J} jüri puan verdi`;
+    countUp(r.querySelector('.tot'), Math.round(it.avg * 10) / 10);
     if (highlight === it.g) { void r.offsetWidth; r.classList.add('hit'); }
   });
   prevRank = Object.fromEntries(list.map((it, i) => [it.g, i]));
   renderPodium(list);
+  if (openGroup) renderDetail(openGroup, false);
   return list;
 }
 
-let podKey = '';
 function renderPodium(list) {
-  const top = list.filter(x => x.total).slice(0, 3);
+  const top = list.filter(x => x.n).slice(0, 3);
   const key = top.map(x => x.g).join('|');
   const changed = key !== podKey;
   $('#podium').innerHTML = [1, 0, 2].map(i => { // 2. - 1. - 3.
     const it = top[i];
     return `<div class="pod p${i + 1} ${changed ? 'swap' : ''}"><div class="m">${MEDAL[i]}</div>
-      <div class="n">${it ? it.g : '—'}</div><div class="b">${it ? it.total : ''}</div></div>`;
+      <div class="n">${it ? it.g : '—'}</div><div class="b">${it ? fmt(it.avg) : ''}</div></div>`;
   }).join('');
   podKey = key;
 }
 
-let lastCard = null;
+// Son oy kartı: kimin oy verdiği ve ilin yeni ortalaması (tek jürinin puanı gösterilmez)
 function showLast(ev, animate) {
   lastCard = ev;
+  const st = stats(ev.group), J = S.juries.length;
   const el = $('#last');
   el.className = 'last' + (animate ? ' anim' : '');
-  el.innerHTML = `<div class="who"><b style="background:${JCOL[ev.jury]}"></b>${jLabel(ev.jury)} ${ev.updated ? 'oyunu güncelledi' : 'oy verdi'}</div>
+  el.innerHTML = `<div class="who"><b>${juryName(ev.jury)}</b> ${ev.updated ? 'puanını güncelledi' : 'oy verdi'}</div>
     <div class="grp">${ev.group}</div>
-    ${S.criteria.map((c, i) => `<div class="crit"><span>${c.name}</span><span class="v">${ev.scores[i]}/${c.max}</span><div class="bar"><i data-w="${ev.scores[i] / c.max * 100}"></i></div></div>`).join('')}
-    <div class="sum"><span style="color:var(--muted)">Bu jürinin toplamı</span><b id="cnt">${animate ? 0 : ev.total}</b></div>`;
-  setTimeout(() => el.querySelectorAll('.bar i').forEach(i => i.style.width = i.dataset.w + '%'), 60);
+    <div class="dots">${Array.from({ length: J }, (_, k) => `<i class="${k < st.n ? 'on' : ''}"></i>`).join('')}</div>
+    <div class="sum"><span><small>Yeni ortalama</small>${st.n} / ${J} jüri</span><b id="cnt">${animate ? '0,0' : fmt(st.avg)}</b></div>`;
   if (animate) {
     const cnt = $('#cnt'), t0 = performance.now();
-    (function tick(t) { const p = Math.min(1, (t - t0) / 1200); cnt.textContent = Math.round(ev.total * (1 - Math.pow(1 - p, 3))); if (p < 1) requestAnimationFrame(tick); })(t0);
+    (function tick(t) { const p = Math.min(1, (t - t0) / 1200); cnt.textContent = fmt(st.avg * (1 - Math.pow(1 - p, 3))); if (p < 1) requestAnimationFrame(tick); })(t0);
   }
 }
 
 function renderFeed() {
   const evs = [];
-  for (const j of S.juries) for (const g in S.votes[j]) evs.push({ jury: j, group: g, ...S.votes[j][g] });
+  for (const j of S.juries) for (const g in S.votes[j.id]) evs.push({ jury: j.id, group: g, ...S.votes[j.id][g] });
   evs.sort((a, b) => b.time - a.time);
-  $('#feed').innerHTML = evs.slice(0, 30).map(e => `<li><b style="background:${JCOL[e.jury]}"></b>
-    <span>${jLabel(e.jury)} → <strong>${e.group}</strong><br><span class="t">${new Date(e.time).toLocaleTimeString('tr-TR')}</span></span>
-    <span class="p">${e.total}</span></li>`).join('');
+  $('#feed').innerHTML = evs.slice(0, 40).map(e => `<li><b></b>
+    <span>${juryName(e.jury)} → <strong>${e.group}</strong><br><span class="t">${new Date(e.time).toLocaleTimeString('tr-TR')}</span></span>
+    <span class="t">✓</span></li>`).join('');
   return evs[0];
 }
+
+// İl ayrıntısı: 5 jürinin kriter kriter puanları ve ortalama
+function openDetail(g) { openGroup = g; renderDetail(g, true); }
+function closeDetail() { openGroup = null; $('#detail').classList.add('hidden'); $('#detail').innerHTML = ''; }
+function renderDetail(g, animate) {
+  const st = stats(g), J = S.juries.length;
+  const rank = compute().findIndex(x => x.g === g) + 1;
+  const done = st.per.filter(Boolean);
+  const critAvg = S.criteria.map((_, i) => done.length ? done.reduce((a, v) => a + v.scores[i], 0) / done.length : null);
+  const box = $('#detail');
+  box.classList.remove('hidden');
+  box.innerHTML = `<div class="dbox" style="${animate ? '' : 'animation:none'}">
+    <div class="dhead">
+      <h3>${g}<small>${st.n ? `${rank}. sırada · ` : ''}${st.n} / ${J} jüri puan verdi</small></h3>
+      <div class="dright"><div class="davg"><b>${st.n ? fmt(st.avg) : '–'}</b><span>Jüri ortalaması / 100</span></div>
+      <button class="dclose" id="dclose" title="Kapat">✕</button></div>
+    </div>
+    <div class="dscroll"><table class="dtable">
+      <thead><tr><th>Jüri</th>${S.criteria.map((c, i) => `<th title="${c.name}">${SHORT[i] || c.name}<small>/${c.max}</small></th>`).join('')}<th>Toplam<small>/100</small></th></tr></thead>
+      <tbody>${S.juries.map((j, k) => {
+        const v = st.per[k];
+        const delay = animate ? `style="animation-delay:${.08 + k * .09}s"` : 'style="animation:none;opacity:1"';
+        return v
+          ? `<tr ${delay}><td class="name">${j.name}</td>${v.scores.map(x => `<td>${x}</td>`).join('')}<td class="tot">${v.total}</td></tr>`
+          : `<tr class="wait" ${delay}><td class="name">${j.name}</td><td colspan="${S.criteria.length + 1}">Henüz puanlamadı</td></tr>`;
+      }).join('')}</tbody>
+      ${st.n ? `<tfoot><tr><td>Ortalama</td>${critAvg.map(x => `<td>${fmt(x)}</td>`).join('')}<td>${fmt(st.avg)}</td></tr></tfoot>` : ''}
+    </table></div></div>`;
+  $('#dclose').onclick = closeDetail;
+}
+$('#detail').addEventListener('click', e => { if (e.target.id === 'detail') closeDetail(); });
+addEventListener('keydown', e => { if (e.key === 'Escape') closeDetail(); });
 
 // Yeni oy: büyük duyuru + konfeti, ardından sıralama kayarak güncellenir; lider değişirse kutlama
 async function celebrate(ev) {
   const fx = $('#fx');
-  fx.innerHTML = `<div class="splash" style="--c:${JHEX[ev.jury]}"><div class="box">
+  const st = stats(ev.group);
+  fx.innerHTML = `<div class="splash"><div class="box">
     <div class="tag">⭐ ${ev.updated ? 'OY GÜNCELLENDİ' : 'YENİ OY'} ⭐</div>
     <div class="g">${ev.group}</div>
-    <div class="p">${ev.total} <small>puan · ${jLabel(ev.jury)}</small></div></div></div>`;
-  confetti(140, [JHEX[ev.jury], '#fde68a', '#ffffff', '#a78bfa'], { x: innerWidth / 2, y: innerHeight / 2 });
+    <div class="who">${juryName(ev.jury)}</div>
+    <div class="p"><small>Yeni ortalama</small> ${fmt(st.avg)}</div></div></div>`;
+  confetti(140, ['#22d3ee', '#fde68a', '#ffffff', '#a78bfa'], { x: innerWidth / 2, y: innerHeight / 2 });
   await wait(1500);
   showLast(ev, true);
   const list = render(ev.group);
@@ -351,7 +419,7 @@ async function removal(ev) {
   fx.innerHTML = `<div class="splash del"><div class="box">
     <div class="tag">🗑 OY GERİ ÇEKİLDİ</div>
     <div class="g">${ev.group}</div>
-    <div class="p"><small>${jLabel(ev.jury)} puanını sildi</small></div></div></div>`;
+    <div class="p"><small>${juryName(ev.jury)} puanını sildi</small></div></div></div>`;
   await wait(1400);
   const list = render(ev.group);
   const r = rows[ev.group]; if (r) { r.classList.remove('hit'); void r.offsetWidth; r.classList.add('drop'); }
@@ -359,7 +427,7 @@ async function removal(ev) {
   if (lastCard && lastCard.jury === ev.jury && lastCard.group === ev.group) {
     if (newest) showLast(newest, false);
     else { lastCard = null; $('#last').className = 'last empty'; $('#last').textContent = 'Henüz oy yok.'; }
-  }
+  } else if (lastCard) showLast(lastCard, false);
   await wait(900);
   fx.innerHTML = '';
   await checkLeader(list);
@@ -367,7 +435,7 @@ async function removal(ev) {
 
 async function checkLeader(list) {
   const fx = $('#fx');
-  const newLeader = list[0] && list[0].total ? list[0].g : null;
+  const newLeader = list[0] && list[0].n ? list[0].g : null;
   if (!newLeader) { leader = null; return; }
   if (newLeader !== leader) {
     const first = leader === null;
@@ -389,9 +457,8 @@ function connect() {
     const data = JSON.parse(m.data);
     if (!S) {
       S = data;
-      $('#legend').innerHTML = S.juries.map(j => `<span><b style="background:${JCOL[j]}"></b>${jLabel(j)}</span>`).join('');
       const list = render();
-      leader = list[0] && list[0].total ? list[0].g : null;
+      leader = list[0] && list[0].n ? list[0].g : null;
       const newest = renderFeed();
       if (newest) showLast(newest, false);
       return;
@@ -406,16 +473,6 @@ function connect() {
   };
 }
 
-$('#board').addEventListener('mousemove', e => {
-  const seg = e.target.closest('.seg'), tip = $('#tip');
-  if (!seg || seg.dataset.v === '') { tip.style.display = 'none'; return; }
-  const g = seg.closest('.row').dataset.g;
-  tip.innerHTML = `<b>${g}</b><br><span class="k">${jLabel(seg.dataset.j)}:</span> ${seg.dataset.v} puan`;
-  tip.style.display = 'block';
-  tip.style.left = Math.min(e.clientX + 14, innerWidth - 180) + 'px';
-  tip.style.top = (e.clientY + 14) + 'px';
-});
-$('#board').addEventListener('mouseleave', () => $('#tip').style.display = 'none');
 $('#fs').onclick = () => document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen();
 addEventListener('resize', () => { sizeCanvas(); S && render(); });
 
