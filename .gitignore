@@ -1,0 +1,15 @@
+# Gizli ayarlar (jüri şifresi)
+.env
+
+# Veri: oylar
+juri.db
+juri.db-*
+data/
+
+# Gecici
+*.tar.gz
+node_modules/
+
+# Sunucuya ozel dagitim dosyalari
+deploy/
+DAGITIM.md

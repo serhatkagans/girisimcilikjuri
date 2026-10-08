@@ -1,0 +1,10 @@
+{
+  "name": "girisimcilikjuri",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Girişimcilik yarışması için canlı jüri değerlendirme sistemi",
+  "scripts": {
+    "start": "node --no-warnings --env-file-if-exists=.env server.js"
+  },
+  "engines": { "node": ">=22.13" }
+}

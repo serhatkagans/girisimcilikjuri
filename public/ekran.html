@@ -1,0 +1,425 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Canlı Sıralama</title>
+<style>
+  :root {
+    --bg: #0f172a; --panel: #111c33; --panel2: #16233f; --line: #24345a; --grid: #1c2a49;
+    --text: #e8eefc; --muted: #8fa3c7; --accent: #22d3ee;
+    --j1: #3987e5; --j2: #d95926; --j3: #199e70;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body { margin: 0; font-family: "Segoe UI", system-ui, sans-serif; background: radial-gradient(circle at 15% 0%, #1e2b55 0%, var(--bg) 55%); color: var(--text); overflow: hidden; }
+  header { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 14px 28px; border-bottom: 1px solid var(--line); }
+  header h1 { margin: 0; font-size: 24px; letter-spacing: .01em; }
+  header h1 small { display: block; font-size: 13px; color: var(--muted); font-weight: 400; }
+  .hright { display: flex; align-items: center; gap: 20px; color: var(--muted); font-size: 14px; }
+  .live { display: inline-flex; align-items: center; gap: 8px; }
+  .live i { width: 10px; height: 10px; border-radius: 50%; background: #34d399; box-shadow: 0 0 0 0 rgba(52,211,153,.7); animation: pulse 1.6s infinite; }
+  .live.off i { background: #f87171; animation: none; }
+  @keyframes pulse { 70% { box-shadow: 0 0 0 10px rgba(52,211,153,0); } 100% { box-shadow: 0 0 0 0 rgba(52,211,153,0); } }
+  .legend { display: flex; gap: 14px; }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; color: var(--text); }
+  .legend b { width: 12px; height: 12px; border-radius: 3px; display: inline-block; }
+  .fs { background: transparent; border: 1px solid var(--line); color: var(--muted); border-radius: 8px; padding: 6px 10px; cursor: pointer; font: inherit; }
+
+  main { display: grid; grid-template-columns: minmax(0, 1fr) 380px; gap: 20px; padding: 18px 28px; height: calc(100vh - 76px); }
+  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 16px 18px; min-height: 0; display: flex; flex-direction: column; }
+  .panel h2 { margin: 0 0 10px; font-size: 14px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: .05em; display: flex; justify-content: space-between; }
+
+  /* Sıralama + yığılmış çubuk grafik */
+  .cols { display: grid; grid-template-columns: 44px 150px minmax(0, 1fr) 150px 64px; gap: 12px; font-size: 12px; color: var(--muted); padding: 0 8px 6px; border-bottom: 1px solid var(--line); }
+  .cols .r { text-align: right; }
+  #board { position: relative; flex: 1; min-height: 0; }
+  .row { position: absolute; left: 0; right: 0; display: grid; grid-template-columns: 44px 150px minmax(0, 1fr) 150px 64px; gap: 12px; align-items: center; padding: 0 8px; border-radius: 8px; transition: transform .9s cubic-bezier(.3,.9,.3,1), background .4s; }
+  .row:nth-child(odd) { }
+  .row .rk { font-weight: 800; font-size: 18px; color: var(--muted); font-variant-numeric: tabular-nums; text-align: center; }
+  .row.top1 .rk { color: #fbbf24; } .row.top2 .rk { color: #cbd5e1; } .row.top3 .rk { color: #d97706; }
+  .row .nm { font-weight: 600; font-size: 17px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .row .track { position: relative; height: 60%; max-height: 22px; display: flex; gap: 2px; background: linear-gradient(90deg, var(--grid) 1px, transparent 1px) 0 0 / 10% 100%; }
+  .row .seg { height: 100%; transition: width .9s cubic-bezier(.2,.8,.2,1); min-width: 0; cursor: default; }
+  .row .seg:last-of-type, .row .seg.end { border-radius: 0 4px 4px 0; }
+  .row .seg.j1 { background: var(--j1); } .row .seg.j2 { background: var(--j2); } .row .seg.j3 { background: var(--j3); }
+  .row .per { font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; }
+  .row .per em { font-style: normal; color: var(--text); }
+  .row .tot { font-size: 22px; font-weight: 800; text-align: right; font-variant-numeric: tabular-nums; }
+  .row.hit { background: rgba(34,211,238,.14); animation: hit 2.4s ease; }
+  @keyframes hit { 0% { background: rgba(34,211,238,.45); } 100% { background: transparent; } }
+  .row .move { font-size: 11px; margin-left: 6px; font-weight: 700; }
+  .row .move.up { color: #34d399; } .row .move.down { color: #f87171; }
+
+  /* Sağ: son oy */
+  .last { position: relative; overflow: hidden; border-radius: 12px; padding: 16px; background: linear-gradient(135deg, rgba(34,211,238,.10), rgba(167,139,250,.10)); border: 1px solid var(--line); }
+  .last.empty { color: var(--muted); text-align: center; padding: 30px 10px; }
+  .last .who { font-size: 13px; color: var(--muted); display: flex; align-items: center; gap: 8px; }
+  .last .who b { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+  .last .grp { font-size: 30px; font-weight: 800; margin: 4px 0 10px; }
+  .last .crit { display: grid; grid-template-columns: 1fr 34px; gap: 2px 8px; margin: 6px 0; font-size: 12.5px; color: var(--muted); }
+  .last .crit .v { text-align: right; color: var(--text); font-weight: 700; font-variant-numeric: tabular-nums; }
+  .last .crit .bar { grid-column: 1 / -1; height: 5px; background: var(--panel2); border-radius: 3px; overflow: hidden; }
+  .last .crit .bar i { display: block; height: 100%; width: 0; background: var(--accent); border-radius: 3px; transition: width .8s ease; }
+  .last .sum { display: flex; justify-content: space-between; align-items: baseline; margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--line); }
+  .last .sum b { font-size: 40px; font-variant-numeric: tabular-nums; }
+  .last.anim { animation: enter .7s cubic-bezier(.2,1.4,.4,1); }
+  .last.anim::after { content: ""; position: absolute; inset: 0; background: linear-gradient(110deg, transparent 30%, rgba(255,255,255,.18) 50%, transparent 70%); transform: translateX(-100%); animation: shine 1.2s .2s ease; pointer-events: none; }
+  @keyframes enter { from { transform: translateY(-20px) scale(.95); opacity: 0; } to { transform: none; opacity: 1; } }
+  @keyframes shine { to { transform: translateX(100%); } }
+  .feed { list-style: none; margin: 14px 0 0; padding: 0; overflow: auto; flex: 1; min-height: 0; }
+  .feed li { display: grid; grid-template-columns: 10px 1fr auto; gap: 10px; align-items: center; padding: 8px 4px; border-bottom: 1px solid var(--grid); font-size: 14px; animation: enter .5s ease; }
+  .feed li b { width: 10px; height: 10px; border-radius: 3px; }
+  .feed li .t { color: var(--muted); font-size: 12px; }
+  .feed li .p { font-weight: 700; font-variant-numeric: tabular-nums; }
+
+  /* Hareketli arka plan */
+  .bg { position: fixed; inset: 0; z-index: -1; overflow: hidden; pointer-events: none; }
+  .bg .blob { position: absolute; width: 520px; height: 520px; border-radius: 50%; filter: blur(90px); opacity: .28; animation: drift 22s ease-in-out infinite alternate; }
+  .bg .blob:nth-child(1) { background: #3987e5; left: -120px; top: -80px; }
+  .bg .blob:nth-child(2) { background: #a78bfa; right: -160px; top: 30%; animation-duration: 28s; }
+  .bg .blob:nth-child(3) { background: #199e70; left: 30%; bottom: -220px; animation-duration: 34s; }
+  @keyframes drift { to { transform: translate(140px, 90px) scale(1.25); } }
+  .bg .star { position: absolute; width: 3px; height: 3px; border-radius: 50%; background: #fff; animation: twinkle 3s ease-in-out infinite; }
+  @keyframes twinkle { 0%,100% { opacity: .1; } 50% { opacity: .9; } }
+
+  header h1 .trophy { display: inline-block; animation: wobble 3s ease-in-out infinite; }
+  @keyframes wobble { 0%,100% { transform: rotate(-8deg); } 50% { transform: rotate(8deg) scale(1.1); } }
+
+  /* Çubuklarda parıltı */
+  .row .track .seg { position: relative; overflow: hidden; }
+  .row .track .seg::after { content: ""; position: absolute; inset: 0; background: linear-gradient(100deg, transparent 20%, rgba(255,255,255,.35) 50%, transparent 80%); transform: translateX(-120%); animation: barshine 4.5s ease-in-out infinite; }
+  @keyframes barshine { 60%, 100% { transform: translateX(120%); } }
+  .row.top1 { background: linear-gradient(90deg, rgba(251,191,36,.16), transparent 70%); }
+  .row.top2 { background: linear-gradient(90deg, rgba(203,213,225,.10), transparent 70%); }
+  .row.top3 { background: linear-gradient(90deg, rgba(217,119,6,.12), transparent 70%); }
+  .row .medal { display: inline-block; font-size: 20px; animation: bounce 1.8s ease-in-out infinite; }
+  @keyframes bounce { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
+  .row.rising { z-index: 3; box-shadow: 0 0 0 2px #34d399, 0 0 30px rgba(52,211,153,.55); background: rgba(52,211,153,.18); }
+  .row.falling { z-index: 1; opacity: .75; }
+  .row .tot.bump { animation: bumpNum .7s ease; color: #fbbf24; }
+  @keyframes bumpNum { 40% { transform: scale(1.5); } }
+
+  /* Podyum */
+  .podium { display: grid; grid-template-columns: 1fr 1fr 1fr; align-items: end; gap: 8px; margin-bottom: 14px; height: 150px; }
+  .pod { text-align: center; display: flex; flex-direction: column; justify-content: flex-end; height: 100%; }
+  .pod .m { font-size: 30px; animation: bounce 2s ease-in-out infinite; }
+  .pod .n { font-weight: 800; font-size: 15px; margin: 2px 0 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .pod .b { border-radius: 10px 10px 4px 4px; display: flex; align-items: flex-start; justify-content: center; padding-top: 6px; font-weight: 800; font-size: 18px; color: #0b1020; transition: height .9s cubic-bezier(.3,1.4,.4,1); }
+  .pod.p1 .b { background: linear-gradient(#fde68a, #f59e0b); height: 70px; box-shadow: 0 0 24px rgba(251,191,36,.5); }
+  .pod.p2 .b { background: linear-gradient(#f1f5f9, #94a3b8); height: 50px; }
+  .pod.p3 .b { background: linear-gradient(#fdba74, #c2410c); height: 36px; }
+  .pod.p1 .m { animation-delay: .2s; } .pod.p3 .m { animation-delay: .4s; }
+  .pod.swap { animation: podSwap .8s ease; }
+  @keyframes podSwap { 0% { transform: rotateY(90deg); } 100% { transform: none; } }
+
+  /* Yeni oy duyurusu */
+  #confetti { position: fixed; inset: 0; pointer-events: none; z-index: 60; }
+  .splash { position: fixed; inset: 0; display: grid; place-items: center; z-index: 55; pointer-events: none; }
+  .splash .box { text-align: center; padding: 36px 60px; border-radius: 28px; background: rgba(11,18,36,.88); border: 3px solid var(--c, var(--accent)); box-shadow: 0 0 80px var(--c, var(--accent)), inset 0 0 40px rgba(255,255,255,.05); animation: splashIn 2.6s cubic-bezier(.2,1.3,.3,1) forwards; }
+  .splash .tag { font-size: 22px; font-weight: 800; letter-spacing: .2em; color: var(--c); }
+  .splash .g { font-size: 72px; font-weight: 900; line-height: 1.1; margin: 6px 0; background: linear-gradient(90deg, #fde68a, #fff, #a5f3fc); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .splash .p { font-size: 44px; font-weight: 900; }
+  .splash .p small { font-size: 20px; color: var(--muted); font-weight: 600; }
+  @keyframes splashIn {
+    0% { transform: scale(.2) rotate(-12deg); opacity: 0; }
+    18% { transform: scale(1.08) rotate(2deg); opacity: 1; }
+    28% { transform: scale(1) rotate(0); }
+    82% { transform: scale(1); opacity: 1; }
+    100% { transform: scale(.6) translateY(-200px); opacity: 0; }
+  }
+  .banner { position: fixed; left: 0; right: 0; top: 40%; z-index: 56; text-align: center; pointer-events: none; font-size: 64px; font-weight: 900; color: #fde68a; text-shadow: 0 0 30px #f59e0b, 0 4px 0 #92400e; animation: banner 3.2s ease forwards; }
+  .banner small { display: block; font-size: 26px; color: #fff; text-shadow: none; letter-spacing: .25em; }
+  @keyframes banner { 0% { transform: translateX(-110%) skewX(-15deg); } 18% { transform: translateX(0) skewX(0); } 80% { transform: translateX(0) scale(1.05); opacity: 1; } 100% { transform: translateX(110%) skewX(15deg); opacity: 0; } }
+
+  .splash.del .box { border-color: #f87171; box-shadow: 0 0 60px rgba(248,113,113,.6); }
+  .splash.del .g { background: none; color: #fecaca; }
+  .splash.del .tag { color: #f87171; }
+  .row.drop { animation: drop 1.6s ease; }
+  @keyframes drop { 0% { background: rgba(248,113,113,.45); } 100% { background: transparent; } }
+
+  .tip { position: fixed; pointer-events: none; background: #0b1224; border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; font-size: 13px; z-index: 50; box-shadow: 0 8px 24px rgba(0,0,0,.5); display: none; }
+  .tip .k { color: var(--muted); }
+
+  @media (max-width: 1100px) {
+    body { overflow: auto; }
+    main { grid-template-columns: 1fr; height: auto; }
+    #board { min-height: 760px; }
+    .cols, .row { grid-template-columns: 34px 110px minmax(0, 1fr) 56px; }
+    .cols .pj, .row .per { display: none; }
+    header { flex-wrap: wrap; padding: 12px 16px; } main { padding: 16px; }
+  }
+</style>
+</head>
+<body>
+<div class="bg" id="bg"><span class="blob"></span><span class="blob"></span><span class="blob"></span></div>
+<canvas id="confetti"></canvas>
+<div id="fx"></div>
+<header>
+  <h1><span class="trophy">🏆</span> Girişimcilik Değerlendirmesi — Canlı Sıralama<small id="progress">Bağlanıyor…</small></h1>
+  <div class="hright">
+    <div class="legend" id="legend"></div>
+    <span class="live off" id="live"><i></i><span>Canlı</span></span>
+    <a class="fs" href="juri" style="text-decoration:none">🔑 Jüri Girişi</a>
+    <button class="fs" id="fs" title="Tam ekran">⛶ Tam ekran</button>
+  </div>
+</header>
+<main>
+  <section class="panel">
+    <h2><span>Genel Sıralama</span><span id="maxNote"></span></h2>
+    <div class="cols"><span>Sıra</span><span>Grup</span><span>Jüri puanları (yığılmış)</span><span class="r pj">Jüri 1 · 2 · 3</span><span class="r">Toplam</span></div>
+    <div id="board"></div>
+  </section>
+  <aside class="panel">
+    <h2>Liderler</h2>
+    <div class="podium" id="podium"></div>
+    <h2>Son Onaylanan Oy</h2>
+    <div class="last empty" id="last">Henüz oy yok.</div>
+    <ul class="feed" id="feed"></ul>
+  </aside>
+</main>
+<div class="tip" id="tip"></div>
+
+<script>
+const $ = s => document.querySelector(s);
+const JCOL = { juri1: 'var(--j1)', juri2: 'var(--j2)', juri3: 'var(--j3)' };
+const JHEX = { juri1: '#3987e5', juri2: '#d95926', juri3: '#199e70' };
+const MEDAL = ['🥇', '🥈', '🥉'];
+const jLabel = j => 'Jüri ' + j.replace('juri', '');
+let S = null, prevRank = {}, rows = {}, lastShownId = null, leader = null, queue = Promise.resolve();
+const wait = ms => new Promise(r => setTimeout(r, ms));
+
+// Yıldızlı arka plan
+for (let i = 0; i < 60; i++) {
+  const s = document.createElement('span');
+  s.className = 'star';
+  s.style.left = Math.random() * 100 + '%'; s.style.top = Math.random() * 100 + '%';
+  s.style.animationDelay = (Math.random() * 3) + 's';
+  s.style.animationDuration = (2 + Math.random() * 3) + 's';
+  $('#bg').appendChild(s);
+}
+
+// Konfeti
+const cv = $('#confetti'), cx = cv.getContext('2d');
+let parts = [], running = false;
+function sizeCanvas() { cv.width = innerWidth; cv.height = innerHeight; }
+sizeCanvas();
+function confetti(n = 160, colors = ['#fde68a', '#22d3ee', '#a78bfa', '#34d399', '#f472b6', '#fb923c'], origin) {
+  for (let i = 0; i < n; i++) {
+    const a = origin ? Math.random() * Math.PI * 2 : Math.PI / 2;
+    const sp = origin ? 4 + Math.random() * 10 : 2 + Math.random() * 4;
+    parts.push({
+      x: origin ? origin.x : Math.random() * innerWidth, y: origin ? origin.y : -20,
+      vx: Math.cos(a) * sp + (origin ? 0 : Math.random() * 4 - 2), vy: Math.sin(a) * sp - (origin ? 6 : 0),
+      w: 6 + Math.random() * 8, h: 4 + Math.random() * 6, r: Math.random() * 6, vr: Math.random() * .3 - .15,
+      c: colors[i % colors.length], life: 0
+    });
+  }
+  if (!running) { running = true; requestAnimationFrame(step); }
+}
+function step() {
+  cx.clearRect(0, 0, cv.width, cv.height);
+  parts = parts.filter(p => p.y < cv.height + 40 && p.life < 400);
+  for (const p of parts) {
+    p.life++; p.vy += .18; p.vx *= .99; p.x += p.vx; p.y += p.vy; p.r += p.vr;
+    cx.save(); cx.translate(p.x, p.y); cx.rotate(p.r); cx.fillStyle = p.c;
+    cx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h * Math.abs(Math.cos(p.life / 8))); cx.restore();
+  }
+  if (parts.length) requestAnimationFrame(step); else { running = false; cx.clearRect(0, 0, cv.width, cv.height); }
+}
+
+function compute() {
+  const perJ = S.juries.length * S.criteria.reduce((a, c) => a + c.max, 0);
+  const list = S.groups.map(g => {
+    const per = S.juries.map(j => S.votes[j][g] ? S.votes[j][g].total : null);
+    const n = per.filter(v => v != null).length;
+    const total = per.reduce((a, v) => a + (v || 0), 0);
+    return { g, per, n, total, avg: n ? total / n : 0 };
+  });
+  list.sort((a, b) => b.total - a.total || b.avg - a.avg || a.g.localeCompare(b.g, 'tr'));
+  return { list, perJ };
+}
+
+function countUp(el, to) {
+  const from = +el.dataset.val || 0;
+  el.dataset.val = to;
+  if (from === to) { el.textContent = to; return; }
+  el.classList.remove('bump'); void el.offsetWidth; el.classList.add('bump');
+  const t0 = performance.now();
+  (function tick(t) {
+    const p = Math.min(1, (t - t0) / 1100);
+    el.textContent = Math.round(from + (to - from) * (1 - Math.pow(1 - p, 3)));
+    if (p < 1) requestAnimationFrame(tick);
+  })(t0);
+}
+
+function render(highlight) {
+  const { list, perJ } = compute();
+  const board = $('#board');
+  const rowH = Math.max(30, board.clientHeight / S.groups.length);
+  $('#maxNote').textContent = `Azami ${perJ} puan`;
+  const nVotes = S.juries.reduce((a, j) => a + Object.keys(S.votes[j]).length, 0);
+  $('#progress').textContent = `${nVotes} / ${S.groups.length * S.juries.length} oy kullanıldı`;
+
+  list.forEach((it, idx) => {
+    let r = rows[it.g];
+    if (!r) {
+      r = document.createElement('div');
+      r.innerHTML = `<span class="rk"></span><span class="nm"></span><div class="track">${S.juries.map(j => `<span class="seg ${'j' + j.replace('juri', '')}" data-j="${j}"></span>`).join('')}</div><span class="per"></span><span class="tot"></span>`;
+      r.dataset.g = it.g;
+      board.appendChild(r);
+      rows[it.g] = r;
+    }
+    const before = prevRank[it.g];
+    const mv = before != null && it.total ? before - idx : 0;
+    r.style.height = rowH + 'px';
+    r.style.transform = `translateY(${idx * rowH}px)`;
+    r.className = 'row' + (it.total && idx < 3 ? ' top' + (idx + 1) : '') + (highlight && mv > 0 ? ' rising' : '') + (highlight && mv < 0 ? ' falling' : '');
+    if (highlight && mv) setTimeout(() => r.classList.remove('rising', 'falling'), 1600);
+    r.querySelector('.rk').innerHTML = it.total ? (idx < 3 ? `<span class="medal">${MEDAL[idx]}</span>` : idx + 1) : '–';
+    r.querySelector('.nm').innerHTML = it.g + (mv && highlight ? `<span class="move ${mv > 0 ? 'up' : 'down'}">${mv > 0 ? '▲' : '▼'}${Math.abs(mv)}</span>` : '');
+    const segs = r.querySelectorAll('.seg');
+    it.per.forEach((v, k) => { segs[k].style.width = ((v || 0) / perJ * 100) + '%'; segs[k].dataset.v = v ?? ''; });
+    r.querySelector('.per').innerHTML = it.per.map(v => v == null ? '—' : `<em>${v}</em>`).join(' · ');
+    countUp(r.querySelector('.tot'), it.total);
+    if (highlight === it.g) { void r.offsetWidth; r.classList.add('hit'); }
+  });
+  prevRank = Object.fromEntries(list.map((it, i) => [it.g, i]));
+  renderPodium(list);
+  return list;
+}
+
+let podKey = '';
+function renderPodium(list) {
+  const top = list.filter(x => x.total).slice(0, 3);
+  const key = top.map(x => x.g).join('|');
+  const changed = key !== podKey;
+  $('#podium').innerHTML = [1, 0, 2].map(i => { // 2. - 1. - 3.
+    const it = top[i];
+    return `<div class="pod p${i + 1} ${changed ? 'swap' : ''}"><div class="m">${MEDAL[i]}</div>
+      <div class="n">${it ? it.g : '—'}</div><div class="b">${it ? it.total : ''}</div></div>`;
+  }).join('');
+  podKey = key;
+}
+
+let lastCard = null;
+function showLast(ev, animate) {
+  lastCard = ev;
+  const el = $('#last');
+  el.className = 'last' + (animate ? ' anim' : '');
+  el.innerHTML = `<div class="who"><b style="background:${JCOL[ev.jury]}"></b>${jLabel(ev.jury)} ${ev.updated ? 'oyunu güncelledi' : 'oy verdi'}</div>
+    <div class="grp">${ev.group}</div>
+    ${S.criteria.map((c, i) => `<div class="crit"><span>${c.name}</span><span class="v">${ev.scores[i]}/${c.max}</span><div class="bar"><i data-w="${ev.scores[i] / c.max * 100}"></i></div></div>`).join('')}
+    <div class="sum"><span style="color:var(--muted)">Bu jürinin toplamı</span><b id="cnt">${animate ? 0 : ev.total}</b></div>`;
+  setTimeout(() => el.querySelectorAll('.bar i').forEach(i => i.style.width = i.dataset.w + '%'), 60);
+  if (animate) {
+    const cnt = $('#cnt'), t0 = performance.now();
+    (function tick(t) { const p = Math.min(1, (t - t0) / 1200); cnt.textContent = Math.round(ev.total * (1 - Math.pow(1 - p, 3))); if (p < 1) requestAnimationFrame(tick); })(t0);
+  }
+}
+
+function renderFeed() {
+  const evs = [];
+  for (const j of S.juries) for (const g in S.votes[j]) evs.push({ jury: j, group: g, ...S.votes[j][g] });
+  evs.sort((a, b) => b.time - a.time);
+  $('#feed').innerHTML = evs.slice(0, 30).map(e => `<li><b style="background:${JCOL[e.jury]}"></b>
+    <span>${jLabel(e.jury)} → <strong>${e.group}</strong><br><span class="t">${new Date(e.time).toLocaleTimeString('tr-TR')}</span></span>
+    <span class="p">${e.total}</span></li>`).join('');
+  return evs[0];
+}
+
+// Yeni oy: büyük duyuru + konfeti, ardından sıralama kayarak güncellenir; lider değişirse kutlama
+async function celebrate(ev) {
+  const fx = $('#fx');
+  fx.innerHTML = `<div class="splash" style="--c:${JHEX[ev.jury]}"><div class="box">
+    <div class="tag">⭐ ${ev.updated ? 'OY GÜNCELLENDİ' : 'YENİ OY'} ⭐</div>
+    <div class="g">${ev.group}</div>
+    <div class="p">${ev.total} <small>puan · ${jLabel(ev.jury)}</small></div></div></div>`;
+  confetti(140, [JHEX[ev.jury], '#fde68a', '#ffffff', '#a78bfa'], { x: innerWidth / 2, y: innerHeight / 2 });
+  await wait(1500);
+  showLast(ev, true);
+  const list = render(ev.group);
+  renderFeed();
+  await wait(1100);
+  fx.innerHTML = '';
+  await checkLeader(list);
+}
+
+// Silinen oy: kısa duyuru, ardından sıralama yeniden dizilir
+async function removal(ev) {
+  const fx = $('#fx');
+  fx.innerHTML = `<div class="splash del"><div class="box">
+    <div class="tag">🗑 OY GERİ ÇEKİLDİ</div>
+    <div class="g">${ev.group}</div>
+    <div class="p"><small>${jLabel(ev.jury)} puanını sildi</small></div></div></div>`;
+  await wait(1400);
+  const list = render(ev.group);
+  const r = rows[ev.group]; if (r) { r.classList.remove('hit'); void r.offsetWidth; r.classList.add('drop'); }
+  const newest = renderFeed();
+  if (lastCard && lastCard.jury === ev.jury && lastCard.group === ev.group) {
+    if (newest) showLast(newest, false);
+    else { lastCard = null; $('#last').className = 'last empty'; $('#last').textContent = 'Henüz oy yok.'; }
+  }
+  await wait(900);
+  fx.innerHTML = '';
+  await checkLeader(list);
+}
+
+async function checkLeader(list) {
+  const fx = $('#fx');
+  const newLeader = list[0] && list[0].total ? list[0].g : null;
+  if (!newLeader) { leader = null; return; }
+  if (newLeader !== leader) {
+    const first = leader === null;
+    leader = newLeader;
+    fx.innerHTML = `<div class="banner"><small>${first ? 'İLK LİDER' : 'YENİ LİDER'}</small>👑 ${newLeader} 👑</div>`;
+    confetti(260);
+    setTimeout(() => confetti(160, undefined, { x: innerWidth * .2, y: innerHeight * .5 }), 400);
+    setTimeout(() => confetti(160, undefined, { x: innerWidth * .8, y: innerHeight * .5 }), 800);
+    await wait(3300);
+    fx.innerHTML = '';
+  }
+}
+
+function connect() {
+  const es = new EventSource('events');
+  es.onopen = () => $('#live').classList.remove('off');
+  es.onerror = () => $('#live').classList.add('off');
+  es.onmessage = m => {
+    const data = JSON.parse(m.data);
+    if (!S) {
+      S = data;
+      $('#legend').innerHTML = S.juries.map(j => `<span><b style="background:${JCOL[j]}"></b>${jLabel(j)}</span>`).join('');
+      const list = render();
+      leader = list[0] && list[0].total ? list[0].g : null;
+      const newest = renderFeed();
+      if (newest) showLast(newest, false);
+      return;
+    }
+    const ev = data.lastEvent && data.lastEvent.id !== lastShownId ? data.lastEvent : null;
+    // Efektler sırayla oynatılır; art arda gelen oylar birbirini kesmez
+    queue = queue.then(async () => {
+      S = data;
+      if (ev) { lastShownId = ev.id; await (ev.type === 'deleted' ? removal(ev) : celebrate(ev)); }
+      else { render(); renderFeed(); }
+    });
+  };
+}
+
+$('#board').addEventListener('mousemove', e => {
+  const seg = e.target.closest('.seg'), tip = $('#tip');
+  if (!seg || seg.dataset.v === '') { tip.style.display = 'none'; return; }
+  const g = seg.closest('.row').dataset.g;
+  tip.innerHTML = `<b>${g}</b><br><span class="k">${jLabel(seg.dataset.j)}:</span> ${seg.dataset.v} puan`;
+  tip.style.display = 'block';
+  tip.style.left = Math.min(e.clientX + 14, innerWidth - 180) + 'px';
+  tip.style.top = (e.clientY + 14) + 'px';
+});
+$('#board').addEventListener('mouseleave', () => $('#tip').style.display = 'none');
+$('#fs').onclick = () => document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen();
+addEventListener('resize', () => { sizeCanvas(); S && render(); });
+
+connect();
+</script>
+</body>
+</html>

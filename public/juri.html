@@ -1,0 +1,374 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Jüri Paneli</title>
+<style>
+  :root {
+    --bg: #0f172a; --panel: #111c33; --panel2: #16233f; --line: #24345a;
+    --text: #e8eefc; --muted: #8fa3c7; --accent: #22d3ee; --accent2: #a78bfa;
+    --ok: #34d399; --warn: #fbbf24; --err: #f87171;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: "Segoe UI", system-ui, sans-serif; background: radial-gradient(circle at 20% 0%, #1e2b55 0%, var(--bg) 55%); color: var(--text); min-height: 100vh; }
+  button, select, input { font: inherit; }
+  .hidden { display: none !important; }
+
+  /* Giriş */
+  #login { min-height: 100vh; display: grid; place-items: center; padding: 16px; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 28px; width: 100%; max-width: 380px; box-shadow: 0 20px 60px rgba(0,0,0,.4); }
+  .card h1 { margin: 0 0 4px; font-size: 22px; }
+  .card p { margin: 0 0 20px; color: var(--muted); font-size: 14px; }
+  label { display: block; font-size: 13px; color: var(--muted); margin: 12px 0 6px; }
+  input, select { width: 100%; padding: 11px 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--panel2); color: var(--text); outline: none; }
+  input:focus, select:focus { border-color: var(--accent); }
+  .btn { border: 0; border-radius: 10px; padding: 12px 18px; font-weight: 600; cursor: pointer; background: linear-gradient(135deg, var(--accent), var(--accent2)); color: #0b1020; }
+  .btn:disabled { opacity: .4; cursor: not-allowed; }
+  .btn.ghost { background: transparent; color: var(--muted); border: 1px solid var(--line); }
+  .btn.danger { background: transparent; color: var(--err); border: 1px solid rgba(248,113,113,.5); }
+  .btn.danger:hover { background: rgba(248,113,113,.12); }
+  .btn.danger.solid { background: var(--err); color: #1a0505; border-color: var(--err); }
+  .mylist .acts { display: inline-flex; gap: 2px; margin-left: 6px; opacity: 0; transition: opacity .15s; }
+  .mylist li:hover .acts, .mylist li.active .acts { opacity: 1; }
+  .mylist .acts button { border: 0; background: transparent; cursor: pointer; font-size: 13px; padding: 2px 4px; border-radius: 6px; }
+  .mylist .acts button:hover { background: var(--line); }
+  .mylist .r { display: inline-flex; align-items: center; }
+  .mylist li.gone { animation: gone .6s ease; }
+  @keyframes gone { 0% { background: rgba(248,113,113,.35); } 100% { background: transparent; } }
+  .foot-btns { display: flex; gap: 10px; }
+  .deleted { text-align: center; padding: 30px 10px; animation: pop .6s cubic-bezier(.2,1.6,.4,1); }
+  .deleted .ic { font-size: 56px; display: inline-block; animation: shake .6s .3s ease; }
+  .deleted .g { font-size: 24px; font-weight: 800; margin: 8px 0 4px; }
+  .deleted p { color: var(--muted); font-size: 14px; margin: 0; }
+  @keyframes shake { 25% { transform: rotate(-15deg); } 75% { transform: rotate(15deg); } }
+  .err { color: var(--err); font-size: 14px; min-height: 20px; margin-top: 10px; }
+
+  /* Panel */
+  header { display: flex; align-items: center; justify-content: space-between; padding: 14px 24px; border-bottom: 1px solid var(--line); background: rgba(15,23,42,.7); position: sticky; top: 0; z-index: 5; backdrop-filter: blur(6px); }
+  header h1 { margin: 0; font-size: 18px; }
+  header .who { display: flex; align-items: center; gap: 12px; color: var(--muted); }
+  header .who b { color: var(--accent); }
+  main { display: grid; grid-template-columns: 260px minmax(0, 1fr) 320px; gap: 20px; padding: 20px 24px; max-width: 1500px; margin: 0 auto; }
+  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 18px; }
+  .panel h2 { margin: 0 0 12px; font-size: 15px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: .04em; }
+
+  /* Sol: verdiğim puanlar */
+  .mylist { list-style: none; margin: 0; padding: 0; max-height: calc(100vh - 170px); overflow: auto; }
+  .mylist li { display: flex; justify-content: space-between; align-items: center; padding: 8px 10px; border-radius: 8px; cursor: pointer; font-size: 14px; }
+  .mylist li:hover { background: var(--panel2); }
+  .mylist li.active { background: rgba(34,211,238,.12); outline: 1px solid rgba(34,211,238,.4); }
+  .mylist .pt { font-weight: 700; font-variant-numeric: tabular-nums; }
+  .mylist .pt.none { color: var(--muted); font-weight: 400; }
+  .mylist li.flash { animation: flash 1.2s ease; }
+  @keyframes flash { 0%,100% { background: transparent; } 30% { background: rgba(52,211,153,.3); } }
+  .progress { font-size: 13px; color: var(--muted); margin-bottom: 10px; }
+
+  /* Orta: form */
+  .crit { padding: 14px 0; border-top: 1px solid var(--line); }
+  .crit:first-of-type { border-top: 0; }
+  .crit-head { display: flex; justify-content: space-between; gap: 12px; align-items: center; margin-bottom: 8px; }
+  .crit-head .t { font-weight: 600; }
+  .crit-head .t small { color: var(--muted); font-weight: 400; margin-left: 6px; }
+  .crit-head .t .req { color: var(--err); }
+  .crit-head select { width: 90px; flex: none; padding: 7px 8px; }
+  .quick { display: flex; flex-wrap: wrap; gap: 6px; }
+  .quick button { width: 36px; height: 34px; border-radius: 8px; border: 1px solid var(--line); background: var(--panel2); color: var(--text); cursor: pointer; font-weight: 600; transition: transform .1s, background .15s; }
+  .quick button:hover { border-color: var(--accent); }
+  .quick button.sel { background: var(--accent); color: #0b1020; border-color: var(--accent); transform: scale(1.08); }
+  .crit.missing .crit-head .t { color: var(--err); }
+  .formfoot { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--line); }
+  .total { font-size: 15px; color: var(--muted); }
+  .total b { font-size: 28px; color: var(--text); font-variant-numeric: tabular-nums; }
+  .notice { font-size: 13px; color: var(--warn); margin-top: 8px; min-height: 18px; }
+
+  /* Sağ: onaylanan oy efekti */
+  .result-empty { color: var(--muted); font-size: 14px; text-align: center; padding: 40px 10px; }
+  .result { position: relative; overflow: hidden; }
+  .result .grp { font-size: 26px; font-weight: 800; margin: 2px 0 2px; animation: pop .6s cubic-bezier(.2,1.6,.4,1); }
+  .result .sub { color: var(--ok); font-size: 13px; margin-bottom: 14px; }
+  .result .row { display: grid; grid-template-columns: 1fr 52px; gap: 8px; align-items: center; margin: 8px 0; opacity: 0; animation: slideIn .45s ease forwards; }
+  .result .row .n { font-size: 12.5px; color: var(--muted); }
+  .result .row .bar { grid-column: 1 / -1; height: 6px; background: var(--panel2); border-radius: 4px; overflow: hidden; }
+  .result .row .bar i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, var(--accent), var(--accent2)); border-radius: 4px; transition: width .8s cubic-bezier(.2,.8,.2,1); }
+  .result .row .v { text-align: right; font-weight: 700; font-variant-numeric: tabular-nums; grid-row: 1; grid-column: 2; }
+  .result .big { margin-top: 18px; text-align: center; padding: 16px; border-radius: 12px; background: linear-gradient(135deg, rgba(34,211,238,.15), rgba(167,139,250,.15)); }
+  .result .big b { display: block; font-size: 52px; line-height: 1; font-variant-numeric: tabular-nums; }
+  .result .big span { color: var(--muted); font-size: 13px; }
+  @keyframes pop { from { transform: scale(.4); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  @keyframes slideIn { from { transform: translateX(30px); opacity: 0; } to { transform: none; opacity: 1; } }
+  .spark { position: absolute; width: 8px; height: 8px; border-radius: 2px; pointer-events: none; animation: spark 1.1s ease-out forwards; }
+  @keyframes spark { to { transform: translate(var(--dx), var(--dy)) rotate(540deg); opacity: 0; } }
+
+  /* Onay penceresi */
+  .modal { position: fixed; inset: 0; background: rgba(2,6,23,.7); display: grid; place-items: center; z-index: 20; padding: 16px; }
+  .modal .card { max-width: 440px; }
+  .modal table { width: 100%; border-collapse: collapse; font-size: 14px; margin: 8px 0 16px; }
+  .modal td { padding: 6px 0; border-bottom: 1px solid var(--line); }
+  .modal td:last-child { text-align: right; font-weight: 700; }
+  .modal .actions { display: flex; gap: 10px; justify-content: flex-end; }
+
+  @media (max-width: 1100px) { main { grid-template-columns: 1fr; } .mylist { max-height: 260px; } }
+  @media (max-width: 600px) { main { padding: 16px; } header { padding: 12px 16px; } .quick button { width: 32px; height: 32px; } }
+</style>
+</head>
+<body>
+
+<section id="login">
+  <form class="card" id="loginForm" autocomplete="off">
+    <h1>Jüri Girişi</h1>
+    <p>Gençlik Girişimcilik Değerlendirmesi</p>
+    <label for="u">Kullanıcı adı</label>
+    <input id="u" required autofocus>
+    <label for="p">Şifre</label>
+    <input id="p" type="password" required>
+    <div class="err" id="loginErr"></div>
+    <button class="btn" style="width:100%;margin-top:6px">Giriş Yap</button>
+  </form>
+</section>
+
+<section id="app" class="hidden">
+  <header>
+    <h1>Jüri Değerlendirme Paneli</h1>
+    <div class="who"><span>Jüri: <b id="who"></b></span><button class="btn ghost" id="logout">Çıkış</button></div>
+  </header>
+  <main>
+    <aside class="panel">
+      <h2>Verdiğim Puanlar</h2>
+      <div class="progress" id="progress"></div>
+      <ul class="mylist" id="mylist"></ul>
+    </aside>
+
+    <section class="panel">
+      <h2>Değerlendirme Formu</h2>
+      <label for="group">Değerlendirilecek Grubu Seçiniz <span style="color:var(--err)">*</span></label>
+      <select id="group"></select>
+      <div class="notice" id="notice"></div>
+      <div id="criteria"></div>
+      <div class="formfoot">
+        <div class="total">Toplam: <b id="total">0</b> / <span id="maxTotal"></span></div>
+        <div class="foot-btns">
+          <button class="btn danger hidden" id="del">🗑 Puanı Sil</button>
+          <button class="btn" id="submit">Oyu Onayla</button>
+        </div>
+      </div>
+      <div class="err" id="formErr"></div>
+    </section>
+
+    <aside class="panel">
+      <h2>Onaylanan Oy</h2>
+      <div id="result"><div class="result-empty">Oy onaylandığında puanlarınız burada görünecek.</div></div>
+    </aside>
+  </main>
+</section>
+
+<div class="modal hidden" id="modal">
+  <div class="card">
+    <h1 id="mTitle"></h1>
+    <p id="mDesc"></p>
+    <table id="mTable"></table>
+    <div class="actions">
+      <button class="btn ghost" id="mCancel">Vazgeç</button>
+      <button class="btn" id="mOk">Onayla ve Gönder</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const $ = s => document.querySelector(s);
+let token = sessionStorage.getItem('juriToken');
+let data = null;        // { user, groups, criteria, votes }
+let scores = [];
+
+async function api(path, opts = {}) {
+  const r = await fetch(path, { ...opts, headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token } });
+  const body = await r.json().catch(() => ({}));
+  if (r.status === 401 && path !== 'api/login') { logout(); throw new Error(body.error || 'Oturum geçersiz'); }
+  if (!r.ok) throw new Error(body.error || 'Hata');
+  return body;
+}
+
+$('#loginForm').onsubmit = async e => {
+  e.preventDefault();
+  $('#loginErr').textContent = '';
+  try {
+    const r = await api('api/login', { method: 'POST', body: JSON.stringify({ username: $('#u').value, password: $('#p').value }) });
+    token = r.token; sessionStorage.setItem('juriToken', token);
+    $('#p').value = '';
+    await start();
+  } catch (err) { $('#loginErr').textContent = err.message; }
+};
+
+function logout() {
+  token = null; sessionStorage.removeItem('juriToken');
+  $('#app').classList.add('hidden'); $('#login').classList.remove('hidden');
+}
+$('#logout').onclick = logout;
+
+async function start() {
+  data = await api('api/my-votes');
+  $('#who').textContent = data.user;
+  $('#login').classList.add('hidden'); $('#app').classList.remove('hidden');
+  $('#maxTotal').textContent = data.criteria.reduce((a, c) => a + c.max, 0);
+  buildCriteria();
+  renderGroups();
+  renderMyList();
+  loadGroup();
+}
+
+function renderGroups() {
+  const cur = $('#group').value;
+  $('#group').innerHTML = '<option value="">— Grup seçiniz —</option>' + data.groups.map(g =>
+    `<option value="${g}">${data.votes[g] ? '✓ ' : ''}${g}</option>`).join('');
+  $('#group').value = cur;
+}
+
+function renderMyList(flashGroup) {
+  const done = Object.keys(data.votes).length;
+  $('#progress').textContent = `${done} / ${data.groups.length} grup puanlandı`;
+  $('#mylist').innerHTML = data.groups.map(g => {
+    const v = data.votes[g];
+    return `<li data-g="${g}" class="${g === $('#group').value ? 'active' : ''} ${g === flashGroup ? 'flash' : ''}">
+      <span>${g}</span><span class="r"><span class="pt ${v ? '' : 'none'}">${v ? v.total : '—'}</span>${v ? `<span class="acts"><button type="button" data-act="edit" title="Değiştir">✏️</button><button type="button" data-act="del" title="Sil">🗑</button></span>` : ''}</span></li>`;
+  }).join('');
+}
+$('#mylist').onclick = e => {
+  const li = e.target.closest('li'); if (!li) return;
+  $('#group').value = li.dataset.g; loadGroup(); renderMyList();
+  const act = e.target.closest('button[data-act]');
+  if (act && act.dataset.act === 'del') askDelete(li.dataset.g);
+  else $('#group').scrollIntoView({ behavior: 'smooth', block: 'center' });
+};
+
+function buildCriteria() {
+  $('#criteria').innerHTML = data.criteria.map((c, i) => `
+    <div class="crit" data-i="${i}">
+      <div class="crit-head">
+        <div class="t">${i + 1}. ${c.name} <span class="req">*</span><small>(1–${c.max})</small></div>
+        <select data-i="${i}"><option value="">Seç</option>${Array.from({ length: c.max }, (_, k) => `<option>${k + 1}</option>`).join('')}</select>
+      </div>
+      <div class="quick">${Array.from({ length: c.max }, (_, k) => `<button type="button" data-i="${i}" data-v="${k + 1}">${k + 1}</button>`).join('')}</div>
+    </div>`).join('');
+  $('#criteria').onclick = e => {
+    const b = e.target.closest('button[data-v]'); if (b) setScore(+b.dataset.i, +b.dataset.v);
+  };
+  $('#criteria').onchange = e => {
+    if (e.target.tagName === 'SELECT') setScore(+e.target.dataset.i, e.target.value ? +e.target.value : null);
+  };
+}
+
+function setScore(i, v) {
+  scores[i] = v;
+  const box = $(`.crit[data-i="${i}"]`);
+  box.classList.remove('missing');
+  box.querySelector('select').value = v ?? '';
+  box.querySelectorAll('.quick button').forEach(b => b.classList.toggle('sel', +b.dataset.v === v));
+  $('#total').textContent = scores.reduce((a, b) => a + (b || 0), 0);
+  $('#formErr').textContent = '';
+}
+
+function loadGroup() {
+  const g = $('#group').value;
+  const prev = data.votes[g];
+  $('#notice').textContent = prev ? `Bu grubu daha önce puanladınız (${prev.total} puan). Puanları değiştirip "Puanı Güncelle" ile kaydedebilir ya da silebilirsiniz.` : '';
+  $('#submit').textContent = prev ? 'Puanı Güncelle' : 'Oyu Onayla';
+  $('#del').classList.toggle('hidden', !prev);
+  data.criteria.forEach((_, i) => setScore(i, prev ? prev.scores[i] : null));
+}
+$('#group').onchange = () => { loadGroup(); renderMyList(); };
+
+$('#submit').onclick = () => {
+  const g = $('#group').value;
+  if (!g) { $('#formErr').textContent = 'Lütfen değerlendirilecek grubu seçiniz.'; $('#group').focus(); return; }
+  const missing = data.criteria.map((_, i) => i).filter(i => !scores[i]);
+  if (missing.length) {
+    missing.forEach(i => $(`.crit[data-i="${i}"]`).classList.add('missing'));
+    $('#formErr').textContent = 'Tüm kriterler zorunludur. Eksik kriterleri puanlayınız.';
+    $(`.crit[data-i="${missing[0]}"]`).scrollIntoView({ behavior: 'smooth', block: 'center' });
+    return;
+  }
+  const prev = data.votes[g];
+  modalAction = 'vote';
+  $('#mTitle').textContent = g;
+  $('#mDesc').textContent = prev ? `Önceki puanınız (${prev.total}) bu puanlarla değiştirilecek.` : 'Puanlarınızı kontrol edip onaylayın.';
+  $('#mOk').textContent = prev ? 'Güncelle' : 'Onayla ve Gönder';
+  $('#mOk').className = 'btn';
+  $('#mTable').innerHTML = data.criteria.map((c, i) => `<tr><td>${c.name}</td><td>${scores[i]} / ${c.max}</td></tr>`).join('')
+    + `<tr><td><b>Toplam</b></td><td>${scores.reduce((a, b) => a + b, 0)}</td></tr>`;
+  $('#modal').classList.remove('hidden');
+};
+$('#mCancel').onclick = () => $('#modal').classList.add('hidden');
+let modalAction = 'vote', deleteTarget = null;
+$('#del').onclick = () => askDelete($('#group').value);
+
+function askDelete(g) {
+  const prev = data.votes[g]; if (!prev) return;
+  modalAction = 'delete'; deleteTarget = g;
+  $('#mTitle').textContent = `🗑 ${g}`;
+  $('#mDesc').textContent = 'Bu gruba verdiğiniz puan silinecek ve ana ekrandaki sıralamadan düşülecek. Daha sonra yeniden puanlayabilirsiniz.';
+  $('#mTable').innerHTML = data.criteria.map((c, i) => `<tr><td>${c.name}</td><td>${prev.scores[i]} / ${c.max}</td></tr>`).join('')
+    + `<tr><td><b>Toplam</b></td><td>${prev.total}</td></tr>`;
+  $('#mOk').textContent = 'Evet, Sil';
+  $('#mOk').className = 'btn danger solid';
+  $('#modal').classList.remove('hidden');
+}
+
+async function doDelete(g) {
+  await api('api/vote?group=' + encodeURIComponent(g), { method: 'DELETE' });
+  delete data.votes[g];
+  $('#modal').classList.add('hidden');
+  $('#result').innerHTML = `<div class="deleted"><span class="ic">🗑</span><div class="g">${g}</div><p>Puanınız silindi.</p></div>`;
+  renderGroups(); renderMyList(); loadGroup();
+  const li = $(`#mylist li[data-g="${g}"]`); if (li) li.classList.add('gone');
+}
+
+$('#mOk').onclick = async () => {
+  const g = $('#group').value, sc = scores.slice();
+  $('#mOk').disabled = true;
+  try {
+    if (modalAction === 'delete') return await doDelete(deleteTarget);
+    const r = await api('api/vote', { method: 'POST', body: JSON.stringify({ group: g, scores: sc }) });
+    data.votes[g] = { scores: sc, total: r.total };
+    $('#modal').classList.add('hidden');
+    showResult(g, sc, r.total);
+    renderGroups(); renderMyList(g); loadGroup();
+  } catch (err) {
+    $('#modal').classList.add('hidden');
+    $('#formErr').textContent = err.message;
+  } finally { $('#mOk').disabled = false; }
+};
+
+function showResult(g, sc, total) {
+  const box = $('#result');
+  box.innerHTML = `<div class="result">
+    <div class="grp">${g}</div>
+    <div class="sub">✓ Oyunuz kaydedildi</div>
+    ${data.criteria.map((c, i) => `<div class="row" style="animation-delay:${.1 + i * .08}s">
+      <div class="n">${c.name}</div><div class="v">${sc[i]}</div>
+      <div class="bar"><i data-w="${sc[i] / c.max * 100}"></i></div></div>`).join('')}
+    <div class="big"><b id="cnt">0</b><span>Toplam puan</span></div></div>`;
+  requestAnimationFrame(() => setTimeout(() => box.querySelectorAll('.bar i').forEach(el => el.style.width = el.dataset.w + '%'), 150));
+  const cnt = $('#cnt'), t0 = performance.now(), dur = 1200;
+  (function tick(t) {
+    const p = Math.min(1, (t - t0) / dur);
+    cnt.textContent = Math.round(total * (1 - Math.pow(1 - p, 3)));
+    if (p < 1) requestAnimationFrame(tick);
+  })(t0);
+  const wrap = box.querySelector('.result');
+  const colors = ['#22d3ee', '#a78bfa', '#34d399', '#fbbf24', '#f472b6'];
+  for (let k = 0; k < 40; k++) {
+    const s = document.createElement('i');
+    s.className = 'spark';
+    s.style.left = '50%'; s.style.top = '40px';
+    s.style.background = colors[k % colors.length];
+    s.style.setProperty('--dx', (Math.random() * 280 - 140) + 'px');
+    s.style.setProperty('--dy', (Math.random() * 220 - 60) + 'px');
+    wrap.appendChild(s);
+    setTimeout(() => s.remove(), 1200);
+  }
+}
+
+if (token) start().catch(logout);
+</script>
+</body>
+</html>
