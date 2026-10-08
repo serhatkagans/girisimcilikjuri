@@ -229,12 +229,18 @@ server.listen(PORT, HOST, () => {
   console.log(`\nJüri Değerlendirme Sistemi çalışıyor:`);
   console.log(`  Ana ekran (canlı sıralama): http://localhost:${PORT}/`);
   console.log(`  Jüri paneli               : http://localhost:${PORT}/juri`);
-  for (const list of Object.values(os.networkInterfaces())) {
-    for (const n of list || []) {
-      if (n.family === 'IPv4' && !n.internal) {
-        console.log(`  Ağdaki cihazlar           : http://${n.address}:${PORT}/  ve  /juri`);
+  // Ağ adresleri yalnızca yerel ağda yayın yapılırken gösterilir
+  // (sunucuda 127.0.0.1 dinlenir ve systemd ağ arayüzlerinin okunmasına izin vermez)
+  if (HOST === '0.0.0.0') {
+    try {
+      for (const list of Object.values(os.networkInterfaces())) {
+        for (const n of list || []) {
+          if (n.family === 'IPv4' && !n.internal) {
+            console.log(`  Ağdaki cihazlar           : http://${n.address}:${PORT}/  ve  /juri`);
+          }
+        }
       }
-    }
+    } catch (_) { /* ağ arayüzleri okunamadı */ }
   }
   console.log('');
 });
