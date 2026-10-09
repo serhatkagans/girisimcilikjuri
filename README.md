@@ -12,7 +12,7 @@ efektli gösterildiği web uygulaması. Bağımlılık yok: Node.js 22.13+ yeter
 | Adres | Ne |
 |---|---|
 | `http://localhost:3000/` | Ana ekran: canlı sıralama, giriş gerekmez |
-| `http://localhost:3000/juri` | Jüri paneli: kullanıcı adı isim+soyisim bitişik, küçük harf (ör. `alidemir`) |
+| `http://localhost:3000/juri` | Jüri paneli (telefona uyumlu): kullanıcı adı isim+soyisim bitişik, küçük harf (ör. `alidemir`) |
 
 ## Puanlama
 
@@ -39,6 +39,17 @@ Her jüri kendi puanını istediği zaman değiştirebilir ya da silebilir.
 - **Alt bant:** `.env` içindeki `ETKINLIK_TARIH` ve `ETKINLIK_YER` ile saat gösterilir.
   Destekçi logoları için PNG/JPG/SVG dosyalarını `public/logolar/` klasörüne koyun
   (dosya adına göre sıralanır, sunucuyu yeniden başlatmak gerekmez; ekranı yenileyin).
+
+## Puanları indirme (XLSX)
+
+Ana ekrandaki **⬇ XLSX indir** butonu (ya da doğrudan `http://localhost:3000/puanlar.xlsx`)
+o anki puanlarla bir Excel dosyası indirir; etkinlik boyunca istenildiği kadar indirilebilir.
+
+- **Sıralama** sayfası: sıra, il, takım, ortalama, oy veren jüri sayısı ve her jürinin toplam puanı
+- **Jüri Ayrıntısı** sayfası: sunum sırasına göre her il için beş jürinin kriter kriter puanları,
+  oy zamanı ve kriter ortalamaları
+
+Takım isimleri `server.js` içindeki `TEAMS` listesindedir; ekranlarda il adının yanında görünür.
 
 ## Veri
 

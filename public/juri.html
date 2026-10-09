@@ -113,8 +113,69 @@
   .modal td:last-child { text-align: right; font-weight: 700; }
   .modal .actions { display: flex; gap: 10px; justify-content: flex-end; }
 
+  .tm { display: block; font-size: 12px; color: var(--muted); font-weight: 400; }
+  .crit-head .val, header .who .short { display: none; }
+  button { touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+
   @media (max-width: 1100px) { main { grid-template-columns: 1fr; } .mylist { max-height: 260px; } }
-  @media (max-width: 600px) { main { padding: 16px; } header { padding: 12px 16px; } .quick button { width: 32px; height: 32px; } }
+
+  /* Telefon: tek sütun, önce form; büyük puan butonları; toplam ve onay altta sabit */
+  @media (max-width: 760px) {
+    input, select { font-size: 16px; } /* iOS'ta odaklanınca yakınlaştırmayı önler */
+    header { padding: 10px 14px; padding-top: max(10px, env(safe-area-inset-top)); flex-wrap: nowrap; gap: 10px; }
+    header .logo { height: 30px; padding: 3px 6px; }
+    header h1 { display: none; }
+    header .who { gap: 8px; font-size: 13px; min-width: 0; }
+    header .who > span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    header .who .hi, header .who .full { display: none; }
+    header .who .short { display: inline; }
+    header .who b { font-size: 14px; }
+    header .who .btn { padding: 8px 12px; }
+    main { display: flex; flex-direction: column; gap: 14px; padding: 12px 12px calc(110px + env(safe-area-inset-bottom)); }
+    .panel { padding: 14px; border-radius: 12px; }
+    .p-form { order: 1; } .p-result { order: 2; } .p-list { order: 3; }
+    .p-result:has(.result-empty) { display: none; }
+    .p-result { scroll-margin-top: 64px; }
+    #group { padding: 13px 12px; font-weight: 600; }
+    .crit { padding: 16px 0; }
+    .crit-head { align-items: flex-start; }
+    .crit-head .t { font-size: 15px; line-height: 1.3; }
+    .crit-head .t small { display: block; margin: 2px 0 0; }
+    .crit-head select { display: none; }
+    .crit-head .val { display: block; flex: none; min-width: 58px; text-align: center; padding: 6px 8px; border-radius: 10px; background: var(--panel2); border: 1px solid var(--line); font-weight: 700; font-size: 18px; font-variant-numeric: tabular-nums; }
+    .crit-head .val small { color: var(--muted); font-weight: 400; font-size: 12px; }
+    .crit-head .val.on { border-color: var(--accent); color: var(--accent); }
+    .crit.missing .crit-head .val { border-color: var(--err); }
+    .quick { display: grid; grid-template-columns: repeat(5, 1fr); gap: 7px; }
+    .quick button { width: auto; height: 46px; font-size: 17px; border-radius: 10px; }
+    .quick button:hover { border-color: var(--line); }
+    .quick button.sel { transform: none; }
+    #footbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 10; background: rgba(15,23,42,.96); backdrop-filter: blur(8px); border-top: 1px solid var(--line); padding: 10px 12px calc(10px + env(safe-area-inset-bottom)); }
+    #footbar .formfoot { margin: 0; padding: 0; border: 0; }
+    #footbar .err { margin: 6px 0 0; min-height: 0; font-size: 13px; }
+    #footbar .err:empty { display: none; }
+    .total { font-size: 13px; line-height: 1.1; }
+    .total { white-space: nowrap; }
+    .total b { font-size: 26px; }
+    .foot-btns { gap: 8px; }
+    .foot-btns .btn { padding: 14px 16px; }
+    #submit { min-width: 150px; }
+    .del-txt { display: none; }
+    .mylist { max-height: none; overflow: visible; }
+    .mylist li { padding: 12px 10px; font-size: 15px; }
+    .mylist .acts button { font-size: 18px; padding: 6px 8px; }
+    .result .grp { font-size: 22px; }
+    .result .big b { font-size: 44px; }
+    .modal { place-items: end stretch; padding: 0; }
+    .modal .card { max-width: none; border-radius: 18px 18px 0 0; max-height: 88vh; overflow: auto; padding: 20px 16px calc(16px + env(safe-area-inset-bottom)); animation: sheet .25s ease; }
+    .modal .card h1 { font-size: 20px; }
+    .modal .actions { position: sticky; bottom: 0; background: var(--panel); padding-top: 8px; }
+    .modal .actions .btn { flex: 1; padding: 14px; }
+    .modal td { padding: 8px 0; vertical-align: top; }
+    .modal td:last-child { white-space: nowrap; padding-left: 10px; }
+  }
+  @media (hover: none) { .mylist .acts { opacity: 1; } }
+  @keyframes sheet { from { transform: translateY(40px); opacity: 0; } to { transform: none; opacity: 1; } }
 </style>
 </head>
 <body>
@@ -136,32 +197,34 @@
 <section id="app" class="hidden">
   <header>
     <div class="brand"><img class="logo" src="etkim.png" alt="ETKİM"><h1>Demo Day Jüri Paneli<small>Genç Tekno Girişimcilik Kampı</small></h1></div>
-    <div class="who"><span>Hoş geldiniz, <b id="who"></b></span><button class="btn ghost" id="logout">Çıkış</button></div>
+    <div class="who"><span><span class="hi">Hoş geldiniz, </span><b><span class="full" id="who"></span><span class="short" id="whoShort"></span></b></span><button class="btn ghost" id="logout">Çıkış</button></div>
   </header>
   <main>
-    <aside class="panel">
+    <aside class="panel p-list">
       <h2>Verdiğim Puanlar</h2>
       <div class="progress" id="progress"></div>
       <ul class="mylist" id="mylist"></ul>
     </aside>
 
-    <section class="panel">
+    <section class="panel p-form">
       <h2>Değerlendirme Formu</h2>
       <label for="group">Değerlendirilecek Grubu Seçiniz <span style="color:var(--err)">*</span></label>
       <select id="group"></select>
       <div class="notice" id="notice"></div>
       <div id="criteria"></div>
-      <div class="formfoot">
-        <div class="total">Toplam: <b id="total">0</b> / <span id="maxTotal"></span></div>
-        <div class="foot-btns">
-          <button class="btn danger hidden" id="del">🗑 Puanı Sil</button>
-          <button class="btn" id="submit">Oyu Onayla</button>
+      <div id="footbar">
+        <div class="formfoot">
+          <div class="total">Toplam: <b id="total">0</b> / <span id="maxTotal"></span></div>
+          <div class="foot-btns">
+            <button class="btn danger hidden" id="del" title="Puanı Sil">🗑<span class="del-txt"> Puanı Sil</span></button>
+            <button class="btn" id="submit">Oyu Onayla</button>
+          </div>
         </div>
+        <div class="err" id="formErr"></div>
       </div>
-      <div class="err" id="formErr"></div>
     </section>
 
-    <aside class="panel">
+    <aside class="panel p-result">
       <h2>Onaylanan Oy</h2>
       <div id="result"><div class="result-empty">Oy onaylandığında puanlarınız burada görünecek.</div></div>
     </aside>
@@ -185,6 +248,9 @@ const $ = s => document.querySelector(s);
 let token = sessionStorage.getItem('juriToken');
 let data = null;        // { user, groups, criteria, votes }
 let scores = [];
+const team = g => (data.teams && data.teams[g]) || '';
+const label = g => team(g) ? `${g} · ${team(g)}` : g;
+const isPhone = () => matchMedia('(max-width: 760px)').matches;
 
 async function api(path, opts = {}) {
   const r = await fetch(path, { ...opts, headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token } });
@@ -214,6 +280,7 @@ $('#logout').onclick = logout;
 async function start() {
   data = await api('api/my-votes');
   $('#who').textContent = data.name;
+  $('#whoShort').textContent = data.name.replace(/^(Prof\.|Doç\.|Dr\.|Öğr\. Gör\.|\s)+/g, '');
   $('#login').classList.add('hidden'); $('#app').classList.remove('hidden');
   $('#maxTotal').textContent = data.criteria.reduce((a, c) => a + c.max, 0);
   buildCriteria();
@@ -225,7 +292,7 @@ async function start() {
 function renderGroups() {
   const cur = $('#group').value;
   $('#group').innerHTML = '<option value="">— Grup seçiniz —</option>' + data.groups.map(g =>
-    `<option value="${g}">${data.votes[g] ? '✓ ' : ''}${g}</option>`).join('');
+    `<option value="${g}">${data.votes[g] ? '✓ ' : ''}${label(g)}</option>`).join('');
   $('#group').value = cur;
 }
 
@@ -235,7 +302,7 @@ function renderMyList(flashGroup) {
   $('#mylist').innerHTML = data.groups.map(g => {
     const v = data.votes[g];
     return `<li data-g="${g}" class="${g === $('#group').value ? 'active' : ''} ${g === flashGroup ? 'flash' : ''}">
-      <span>${g}</span><span class="r"><span class="pt ${v ? '' : 'none'}">${v ? v.total : '—'}</span>${v ? `<span class="acts"><button type="button" data-act="edit" title="Değiştir">✏️</button><button type="button" data-act="del" title="Sil">🗑</button></span>` : ''}</span></li>`;
+      <span>${g}<span class="tm">${team(g)}</span></span><span class="r"><span class="pt ${v ? '' : 'none'}">${v ? v.total : '—'}</span>${v ? `<span class="acts"><button type="button" data-act="edit" title="Değiştir">✏️</button><button type="button" data-act="del" title="Sil">🗑</button></span>` : ''}</span></li>`;
   }).join('');
 }
 $('#mylist').onclick = e => {
@@ -251,6 +318,7 @@ function buildCriteria() {
     <div class="crit" data-i="${i}">
       <div class="crit-head">
         <div class="t">${i + 1}. ${c.name} <span class="req">*</span><small>(1–${c.max})</small></div>
+        <span class="val">–<small>/${c.max}</small></span>
         <select data-i="${i}"><option value="">Seç</option>${Array.from({ length: c.max }, (_, k) => `<option>${k + 1}</option>`).join('')}</select>
       </div>
       <div class="quick">${Array.from({ length: c.max }, (_, k) => `<button type="button" data-i="${i}" data-v="${k + 1}">${k + 1}</button>`).join('')}</div>
@@ -268,6 +336,9 @@ function setScore(i, v) {
   const box = $(`.crit[data-i="${i}"]`);
   box.classList.remove('missing');
   box.querySelector('select').value = v ?? '';
+  const val = box.querySelector('.val');
+  val.innerHTML = `${v ?? '–'}<small>/${data.criteria[i].max}</small>`;
+  val.classList.toggle('on', !!v);
   box.querySelectorAll('.quick button').forEach(b => b.classList.toggle('sel', +b.dataset.v === v));
   $('#total').textContent = scores.reduce((a, b) => a + (b || 0), 0);
   $('#formErr').textContent = '';
@@ -295,7 +366,7 @@ $('#submit').onclick = () => {
   }
   const prev = data.votes[g];
   modalAction = 'vote';
-  $('#mTitle').textContent = g;
+  $('#mTitle').textContent = label(g);
   $('#mDesc').textContent = prev ? `Önceki puanınız (${prev.total}) bu puanlarla değiştirilecek.` : 'Puanlarınızı kontrol edip onaylayın.';
   $('#mOk').textContent = prev ? 'Güncelle' : 'Onayla ve Gönder';
   $('#mOk').className = 'btn';
@@ -310,7 +381,7 @@ $('#del').onclick = () => askDelete($('#group').value);
 function askDelete(g) {
   const prev = data.votes[g]; if (!prev) return;
   modalAction = 'delete'; deleteTarget = g;
-  $('#mTitle').textContent = `🗑 ${g}`;
+  $('#mTitle').textContent = `🗑 ${label(g)}`;
   $('#mDesc').textContent = 'Bu gruba verdiğiniz puan silinecek ve ana ekrandaki sıralamadan düşülecek. Daha sonra yeniden puanlayabilirsiniz.';
   $('#mTable').innerHTML = data.criteria.map((c, i) => `<tr><td>${c.name}</td><td>${prev.scores[i]} / ${c.max}</td></tr>`).join('')
     + `<tr><td><b>Toplam</b></td><td>${prev.total}</td></tr>`;
@@ -323,9 +394,10 @@ async function doDelete(g) {
   await api('api/vote?group=' + encodeURIComponent(g), { method: 'DELETE' });
   delete data.votes[g];
   $('#modal').classList.add('hidden');
-  $('#result').innerHTML = `<div class="deleted"><span class="ic">🗑</span><div class="g">${g}</div><p>Puanınız silindi.</p></div>`;
+  $('#result').innerHTML = `<div class="deleted"><span class="ic">🗑</span><div class="g">${g}</div><p>${team(g) ? team(g) + ' · ' : ''}Puanınız silindi.</p></div>`;
   renderGroups(); renderMyList(); loadGroup();
   const li = $(`#mylist li[data-g="${g}"]`); if (li) li.classList.add('gone');
+  showResultOnPhone();
 }
 
 $('#mOk').onclick = async () => {
@@ -338,16 +410,22 @@ $('#mOk').onclick = async () => {
     $('#modal').classList.add('hidden');
     showResult(g, sc, r.total);
     renderGroups(); renderMyList(g); loadGroup();
+    showResultOnPhone();
   } catch (err) {
     $('#modal').classList.add('hidden');
     $('#formErr').textContent = err.message;
   } finally { $('#mOk').disabled = false; }
 };
 
+// Telefonda sonuç kartı formun altında kalır: oy/silme sonrası ona kaydır
+function showResultOnPhone() {
+  if (isPhone()) requestAnimationFrame(() => $('.p-result').scrollIntoView({ behavior: 'smooth', block: 'start' }));
+}
+
 function showResult(g, sc, total) {
   const box = $('#result');
   box.innerHTML = `<div class="result">
-    <div class="grp">${g}</div>
+    <div class="grp">${g}<span class="tm">${team(g)}</span></div>
     <div class="sub">✓ Oyunuz kaydedildi</div>
     ${data.criteria.map((c, i) => `<div class="row" style="animation-delay:${.1 + i * .08}s">
       <div class="n">${c.name}</div><div class="v">${sc[i]}</div>

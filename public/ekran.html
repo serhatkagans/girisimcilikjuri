@@ -30,15 +30,17 @@
   .panel h2 { margin: 0 0 10px; font-size: 14px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: .05em; display: flex; justify-content: space-between; }
 
   /* Sıralama + ortalama çubuğu */
-  .cols { display: grid; grid-template-columns: 44px 160px minmax(0, 1fr) 96px 78px; gap: 12px; font-size: 12px; color: var(--muted); padding: 0 8px 6px; border-bottom: 1px solid var(--line); }
+  .cols { display: grid; grid-template-columns: 44px 290px minmax(0, 1fr) 96px 78px; gap: 12px; font-size: 12px; color: var(--muted); padding: 0 8px 6px; border-bottom: 1px solid var(--line); }
   .cols .r { text-align: right; }
   #board { position: relative; flex: 1; min-height: 0; }
-  .row { position: absolute; left: 0; right: 0; display: grid; grid-template-columns: 44px 160px minmax(0, 1fr) 96px 78px; gap: 12px; align-items: center; padding: 0 8px; border-radius: 8px; cursor: pointer; transition: transform .9s cubic-bezier(.3,.9,.3,1), background .4s; }
+  .row { position: absolute; left: 0; right: 0; display: grid; grid-template-columns: 44px 290px minmax(0, 1fr) 96px 78px; gap: 12px; align-items: center; padding: 0 8px; border-radius: 8px; cursor: pointer; transition: transform .9s cubic-bezier(.3,.9,.3,1), background .4s; }
   .row:hover { outline: 1px solid rgba(34,211,238,.5); background-color: rgba(34,211,238,.06); }
   .row:hover .nm::after { content: " 🔍"; font-size: 13px; }
   .row .rk { font-weight: 800; font-size: 18px; color: var(--muted); font-variant-numeric: tabular-nums; text-align: center; }
   .row.top1 .rk { color: #fbbf24; } .row.top2 .rk { color: #cbd5e1; } .row.top3 .rk { color: #d97706; }
   .row .nm { font-weight: 600; font-size: 17px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .tm { color: var(--muted); font-weight: 400; font-size: .72em; margin-left: 6px; }
+  .tmb { display: block; color: var(--muted); font-weight: 500; font-size: .5em; margin-top: 2px; }
   .row .track { position: relative; height: 60%; max-height: 22px; display: flex; background: linear-gradient(90deg, var(--grid) 1px, transparent 1px) 0 0 / 10% 100%; }
   .row .seg { height: 100%; width: 0; background: linear-gradient(90deg, var(--bar), #22d3ee); border-radius: 0 4px 4px 0; transition: width .9s cubic-bezier(.2,.8,.2,1); }
   .row.top1 .seg { background: linear-gradient(90deg, #f59e0b, #fde68a); }
@@ -215,6 +217,7 @@
   <div class="brand"><img class="logo" src="etkim.png" alt="ETKİM"><h1>Genç Tekno Girişimcilik Kampı <span class="trophy">🏆</span> <em>Demo Day Sunum Listesi</em><small id="progress">Bağlanıyor…</small></h1></div>
   <div class="hright">
     <span class="live off" id="live"><i></i><span>Canlı</span></span>
+    <a class="fs" href="puanlar.xlsx" download style="text-decoration:none" title="Güncel puanları Excel dosyası olarak indir">⬇ XLSX indir</a>
     <a class="fs" href="juri" style="text-decoration:none">🔑 Jüri Girişi</a>
     <button class="fs" id="fs" title="Tam ekran">⛶ Tam ekran</button>
   </div>
@@ -247,6 +250,9 @@ const MEDAL = ['🥇', '🥈', '🥉'];
 const SHORT = ['Girişimcilik', 'Ekip Kurma', 'Yenilikçilik', 'Risk Yön.', 'Kanvas', 'Finansman', 'Sunum'];
 const fmt = v => v.toLocaleString('tr-TR', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
 let S = null, prevRank = {}, rows = {}, lastShownId = null, leader = null, queue = Promise.resolve();
+const team = g => (S.teams && S.teams[g]) || '';
+const tm = g => team(g) ? `<span class="tm">${team(g)}</span>` : '';   // satır içi
+const tmb = g => team(g) ? `<span class="tmb">${team(g)}</span>` : ''; // alt satırda
 let openGroup = null, lastCard = null, podKey = '', stageKey = null;
 const wait = ms => new Promise(r => setTimeout(r, ms));
 const juryName = id => (S.juries.find(j => j.id === id) || { name: id }).name;
@@ -321,11 +327,11 @@ function renderStage(sg) {
   const waiting = S.juries.filter((j, k) => !st.per[k]).map(j => shortName(j.name));
   el.className = 'stage' + (changed ? ' anim' : '');
   el.innerHTML = `<div class="lbl"><i></i>ŞİMDİ SAHNEDE</div>
-    <div class="now">🎤 ${sg.cur}</div>
+    <div class="now">🎤 ${sg.cur}${tmb(sg.cur)}</div>
     <div class="vs"><span>${st.n ? `${st.n} / ${J} jüri oy verdi` : 'Jüri oylaması bekleniyor'}</span>
       <span class="dots">${Array.from({ length: J }, (_, k) => `<i class="${k < st.n ? 'on' : ''}"></i>`).join('')}</span></div>
     <div class="wt">${st.n ? `Bekleniyor: ${waiting.join(', ')}` : ''}</div>
-    <div class="nx"><span>Sıradaki<b>${sg.next || '—'}</b></span><span>${sg.left ? `${sg.left} ekip daha` : 'Son sunum'}</span></div>`;
+    <div class="nx"><span>Sıradaki<b>${sg.next ? sg.next + tm(sg.next) : '—'}</b></span><span>${sg.left ? `${sg.left} ekip daha` : 'Son sunum'}</span></div>`;
 }
 
 function compute() {
@@ -378,7 +384,7 @@ function render(highlight) {
     r.querySelector('.lab').textContent = it.g === sg.cur ? '🎤 SAHNEDE' : !it.n ? 'SUNUM BEKLİYOR' : '';
     if (highlight && mv) setTimeout(() => r.classList.remove('rising', 'falling'), 1600);
     r.querySelector('.rk').innerHTML = it.n ? (idx < 3 ? `<span class="medal">${MEDAL[idx]}</span>` : idx + 1) : '–';
-    r.querySelector('.nm').innerHTML = it.g + (mv && highlight ? `<span class="move ${mv > 0 ? 'up' : 'down'}">${mv > 0 ? '▲' : '▼'}${Math.abs(mv)}</span>` : '');
+    r.querySelector('.nm').innerHTML = it.g + tm(it.g) + (mv && highlight ? `<span class="move ${mv > 0 ? 'up' : 'down'}">${mv > 0 ? '▲' : '▼'}${Math.abs(mv)}</span>` : '');
     r.querySelector('.seg').style.width = it.avg + '%';
     const dots = r.querySelectorAll('.dots i');
     dots.forEach((d, k) => {
@@ -404,7 +410,7 @@ function renderPodium(list) {
   $('#podium').innerHTML = [1, 0, 2].map(i => { // 2. - 1. - 3.
     const it = top[i];
     return `<div class="pod p${i + 1} ${changed ? 'swap' : ''}"><div class="m">${MEDAL[i]}</div>
-      <div class="n">${it ? it.g : '—'}</div><div class="b">${it ? fmt(it.avg) : ''}</div></div>`;
+      <div class="n">${it ? it.g + tmb(it.g) : '—'}</div><div class="b">${it ? fmt(it.avg) : ''}</div></div>`;
   }).join('');
   podKey = key;
 }
@@ -416,7 +422,7 @@ function showLast(ev, animate) {
   const el = $('#last');
   el.className = 'last' + (animate ? ' anim' : '');
   el.innerHTML = `<div class="who"><b>${juryName(ev.jury)}</b> ${ev.updated ? 'puanını güncelledi' : 'oy verdi'}</div>
-    <div class="grp">${ev.group}</div>
+    <div class="grp">${ev.group}${tmb(ev.group)}</div>
     <div class="dots">${Array.from({ length: J }, (_, k) => `<i class="${k < st.n ? 'on' : ''}"></i>`).join('')}</div>
     <div class="sum"><span><small>Yeni ortalama</small>${st.n} / ${J} jüri</span><b id="cnt">${animate ? '0,0' : fmt(st.avg)}</b></div>`;
   if (animate) {
@@ -430,7 +436,7 @@ function renderFeed() {
   for (const j of S.juries) for (const g in S.votes[j.id]) evs.push({ jury: j.id, group: g, ...S.votes[j.id][g] });
   evs.sort((a, b) => b.time - a.time);
   $('#feed').innerHTML = evs.slice(0, 40).map(e => `<li><b></b>
-    <span>${juryName(e.jury)} → <strong>${e.group}</strong><br><span class="t">${new Date(e.time).toLocaleTimeString('tr-TR')}</span></span>
+    <span>${juryName(e.jury)} → <strong>${e.group}</strong>${tm(e.group)}<br><span class="t">${new Date(e.time).toLocaleTimeString('tr-TR')}</span></span>
     <span class="t">✓</span></li>`).join('');
   return evs[0];
 }
@@ -447,7 +453,7 @@ function renderDetail(g, animate) {
   box.classList.remove('hidden');
   box.innerHTML = `<div class="dbox" style="${animate ? '' : 'animation:none'}">
     <div class="dhead">
-      <h3>${g}<small>${st.n ? `${rank}. sırada · ` : ''}${st.n} / ${J} jüri puan verdi</small></h3>
+      <h3>${g}${tm(g)}<small>${st.n ? `${rank}. sırada · ` : ''}${st.n} / ${J} jüri puan verdi</small></h3>
       <div class="dright"><div class="davg"><b>${st.n ? fmt(st.avg) : '–'}</b><span>Jüri ortalaması / 100</span></div>
       <button class="dclose" id="dclose" title="Kapat">✕</button></div>
     </div>
@@ -473,7 +479,7 @@ async function celebrate(ev) {
   const st = stats(ev.group);
   fx.innerHTML = `<div class="splash"><div class="box">
     <div class="tag">⭐ ${ev.updated ? 'OY GÜNCELLENDİ' : 'YENİ OY'} ⭐</div>
-    <div class="g">${ev.group}</div>
+    <div class="g">${ev.group}${tmb(ev.group)}</div>
     <div class="who">${juryName(ev.jury)}</div>
     <div class="p"><small>Yeni ortalama</small> ${fmt(st.avg)}</div></div></div>`;
   confetti(140, ['#22d3ee', '#fde68a', '#ffffff', '#a78bfa'], { x: innerWidth / 2, y: innerHeight / 2 });
@@ -491,7 +497,7 @@ async function removal(ev) {
   const fx = $('#fx');
   fx.innerHTML = `<div class="splash del"><div class="box">
     <div class="tag">🗑 OY GERİ ÇEKİLDİ</div>
-    <div class="g">${ev.group}</div>
+    <div class="g">${ev.group}${tmb(ev.group)}</div>
     <div class="p"><small>${juryName(ev.jury)} puanını sildi</small></div></div></div>`;
   await wait(1400);
   const list = render(ev.group);

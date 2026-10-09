@@ -6,6 +6,7 @@ const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 const os = require('os');
+const zlib = require('zlib');
 const { DatabaseSync } = require('node:sqlite');
 
 const PORT = Number(process.env.PORT) || 3000;
@@ -69,6 +70,15 @@ const GROUPS = [
   'Niğde', 'Aydın', 'Muş', 'Denizli', 'Bingöl'
 ];
 
+// İllerin takım isimleri (sunum sırası yukarıdaki GROUPS listesidir)
+const TEAMS = {
+  Ankara: 'Mergen', Aydın: 'Guards Of Life', Bartın: 'PAFLAGONIA', Batman: 'NovaX⁴',
+  Bingöl: 'KAMADUA-FORCE', Bursa: 'Atlas', Denizli: 'Arcthus Tech', Edirne: 'BİLSEMERA TECH',
+  Gaziantep: 'ROTOREX', Hatay: 'Ecovate', İzmir: 'İzmir Ekibi', Kahramanmaraş: 'Nexus',
+  Kırklareli: 'Genç Girişimciler', Kütahya: 'Grup Qtahya', Manisa: 'Manisa Ekibi', Mersin: 'PUSULA',
+  Muş: 'Qucadio', Niğde: 'Tyana Nova', Samsun: 'NovaSamsun', Trabzon: 'EvoPassTr'
+};
+
 const CRITERIA = [
   { name: 'Girişimcilik (fikrin inovatif yönü)', max: 10 },
   { name: 'Ekip Kurma Becerisi', max: 15 },
@@ -112,12 +122,144 @@ function loadVotes() {
   return votes;
 }
 
+// ---- XLSX dışa aktarma (bağımlılıksız: elle yazılmış OOXML + ZIP) ----
+function zip(files) { // files: [[ad, içerik]]
+  const locals = [], centrals = [];
+  let offset = 0;
+  for (const [name, content] of files) {
+    const nameBuf = Buffer.from(name, 'utf8');
+    const data = Buffer.from(content, 'utf8');
+    const comp = zlib.deflateRawSync(data);
+    const crc = zlib.crc32(data);
+    const head = Buffer.alloc(30);
+    head.writeUInt32LE(0x04034b50, 0); head.writeUInt16LE(20, 4); head.writeUInt16LE(0x0800, 6);
+    head.writeUInt16LE(8, 8); head.writeUInt16LE(0, 10); head.writeUInt16LE(0x21, 12);
+    head.writeUInt32LE(crc, 14); head.writeUInt32LE(comp.length, 18); head.writeUInt32LE(data.length, 22);
+    head.writeUInt16LE(nameBuf.length, 26); head.writeUInt16LE(0, 28);
+    const cen = Buffer.alloc(46);
+    cen.writeUInt32LE(0x02014b50, 0); cen.writeUInt16LE(20, 4); cen.writeUInt16LE(20, 6);
+    cen.writeUInt16LE(0x0800, 8); cen.writeUInt16LE(8, 10); cen.writeUInt16LE(0, 12); cen.writeUInt16LE(0x21, 14);
+    cen.writeUInt32LE(crc, 16); cen.writeUInt32LE(comp.length, 20); cen.writeUInt32LE(data.length, 24);
+    cen.writeUInt16LE(nameBuf.length, 28); cen.writeUInt32LE(offset, 42);
+    locals.push(head, nameBuf, comp);
+    centrals.push(cen, nameBuf);
+    offset += 30 + nameBuf.length + comp.length;
+  }
+  const cdSize = centrals.reduce((a, b) => a + b.length, 0);
+  const end = Buffer.alloc(22);
+  end.writeUInt32LE(0x06054b50, 0); end.writeUInt16LE(files.length, 8); end.writeUInt16LE(files.length, 10);
+  end.writeUInt32LE(cdSize, 12); end.writeUInt32LE(offset, 16);
+  return Buffer.concat([...locals, ...centrals, end]);
+}
+
+const xmlEsc = v => String(v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+function colName(i) { let s = ''; for (i++; i; i = Math.floor((i - 1) / 26)) s = String.fromCharCode(65 + (i - 1) % 26) + s; return s; }
+
+// Hücre: metin / sayı / null ya da { v, s } (s: 1 kalın başlık, 3 kalın + bir ondalık)
+function sheetXml(rows, widths) {
+  const body = rows.map((row, r) => `<row r="${r + 1}">` + row.map((c, i) => {
+    const cell = c !== null && typeof c === 'object' ? c : { v: c };
+    if (cell.v === null || cell.v === undefined || cell.v === '') return '';
+    const ref = colName(i) + (r + 1), st = cell.s ? ` s="${cell.s}"` : '';
+    return typeof cell.v === 'number'
+      ? `<c r="${ref}"${st}><v>${cell.v}</v></c>`
+      : `<c r="${ref}"${st} t="inlineStr"><is><t xml:space="preserve">${xmlEsc(cell.v)}</t></is></c>`;
+  }).join('') + '</row>').join('');
+  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+<sheetViews><sheetView workbookViewId="0"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews>
+<cols>${widths.map((w, i) => `<col min="${i + 1}" max="${i + 1}" width="${w}" customWidth="1"/>`).join('')}</cols>
+<sheetData>${body}</sheetData></worksheet>`;
+}
+
+function workbook(sheets) { // sheets: [{ name, rows, widths }]
+  const ct = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
+<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
+<Default Extension="xml" ContentType="application/xml"/>
+<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>
+<Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>
+${sheets.map((_, i) => `<Override PartName="/xl/worksheets/sheet${i + 1}.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>`).join('')}
+</Types>`;
+  const rels = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/>
+</Relationships>`;
+  const wb = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
+<sheets>${sheets.map((s, i) => `<sheet name="${xmlEsc(s.name)}" sheetId="${i + 1}" r:id="rId${i + 1}"/>`).join('')}</sheets></workbook>`;
+  const wbRels = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+${sheets.map((_, i) => `<Relationship Id="rId${i + 1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet${i + 1}.xml"/>`).join('')}
+<Relationship Id="rId${sheets.length + 1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>
+</Relationships>`;
+  const styles = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+<numFmts count="1"><numFmt numFmtId="164" formatCode="0.0"/></numFmts>
+<fonts count="2"><font><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="11"/><name val="Calibri"/></font></fonts>
+<fills count="3"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill>
+<fill><patternFill patternType="solid"><fgColor rgb="FFDDEBF7"/></patternFill></fill></fills>
+<borders count="1"><border/></borders>
+<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>
+<cellXfs count="4"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>
+<xf numFmtId="0" fontId="1" fillId="2" borderId="0" xfId="0" applyFont="1" applyFill="1" applyAlignment="1"><alignment wrapText="1" vertical="center"/></xf>
+<xf numFmtId="164" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/>
+<xf numFmtId="164" fontId="1" fillId="0" borderId="0" xfId="0" applyNumberFormat="1" applyFont="1"/></cellXfs>
+<cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles>
+</styleSheet>`;
+  return zip([
+    ['[Content_Types].xml', ct], ['_rels/.rels', rels], ['xl/workbook.xml', wb],
+    ['xl/_rels/workbook.xml.rels', wbRels], ['xl/styles.xml', styles],
+    ...sheets.map((s, i) => [`xl/worksheets/sheet${i + 1}.xml`, sheetXml(s.rows, s.widths)])
+  ]);
+}
+
+// Sıralama ana ekrandakiyle aynı: ortalama, sonra oy veren jüri sayısı, sonra sunum sırası
+function scoresXlsx() {
+  const votes = loadVotes();
+  const H = v => ({ v, s: 1 });
+  const round1 = x => Math.round(x * 10) / 10;
+  const stats = GROUPS.map((g, order) => {
+    const per = JURIES.map(j => votes[j.id][g] || null);
+    const done = per.filter(Boolean);
+    const avg = done.length ? done.reduce((a, v) => a + v.total, 0) / done.length : null;
+    return { g, order, per, done, avg };
+  });
+  const ranked = [...stats].sort((a, b) => (b.avg || 0) - (a.avg || 0) || b.done.length - a.done.length || a.order - b.order);
+
+  const ranking = [[H('Sıra'), H('İl'), H('Takım'), H('Ortalama'), H('Oy veren jüri'), ...JURIES.map(j => H(j.name))]];
+  ranked.forEach((s, i) => ranking.push([
+    s.done.length ? i + 1 : null, s.g, TEAMS[s.g] || '',
+    s.avg === null ? null : { v: round1(s.avg), s: 3 }, `${s.done.length} / ${JURIES.length}`,
+    ...s.per.map(v => v ? v.total : null)
+  ]));
+
+  const detail = [[H('Sunum sırası'), H('İl'), H('Takım'), H('Jüri'), ...CRITERIA.map(c => H(`${c.name} (/${c.max})`)), H('Toplam (/100)'), H('Oy zamanı')]];
+  const when = t => new Date(t).toLocaleString('tr-TR', { timeZone: 'Europe/Istanbul' });
+  for (const s of stats) {
+    JURIES.forEach((j, k) => {
+      const v = s.per[k];
+      detail.push([s.order + 1, s.g, TEAMS[s.g] || '', j.name, ...(v ? v.scores : CRITERIA.map(() => null)), v ? v.total : null, v ? when(v.time) : 'Puanlamadı']);
+    });
+    if (s.done.length) {
+      detail.push([null, s.g, TEAMS[s.g] || '', H('Ortalama'),
+        ...CRITERIA.map((_, i) => ({ v: round1(s.done.reduce((a, v) => a + v.scores[i], 0) / s.done.length), s: 3 })),
+        { v: round1(s.avg), s: 3 }, null]);
+    }
+  }
+
+  return workbook([
+    { name: 'Sıralama', rows: ranking, widths: [7, 16, 20, 11, 13, ...JURIES.map(() => 18)] },
+    { name: 'Jüri Ayrıntısı', rows: detail, widths: [9, 16, 20, 32, ...CRITERIA.map(() => 16), 12, 20] }
+  ]);
+}
+
 const sessions = new Map(); // token -> kullanıcı
 const clients = new Set();  // SSE bağlantıları
 let lastEvent = null;       // son oy (efekt için)
 
 function state() {
-  return { groups: GROUPS, criteria: CRITERIA, juries: JURIES, votes: loadVotes(), lastEvent, event: EVENT, sponsors: sponsorLogos() };
+  return { groups: GROUPS, teams: TEAMS, criteria: CRITERIA, juries: JURIES, votes: loadVotes(), lastEvent, event: EVENT, sponsors: sponsorLogos() };
 }
 
 function broadcast() {
@@ -182,7 +324,7 @@ const server = http.createServer(async (req, res) => {
     if (req.method === 'GET' && url.pathname === '/api/my-votes') {
       const user = auth(req);
       if (!user) return json(res, 401, { error: 'Oturum geçersiz' });
-      return json(res, 200, { user, name: JURY_NAME[user], groups: GROUPS, criteria: CRITERIA, votes: loadVotes()[user] });
+      return json(res, 200, { user, name: JURY_NAME[user], groups: GROUPS, teams: TEAMS, criteria: CRITERIA, votes: loadVotes()[user] });
     }
 
     if (req.method === 'POST' && url.pathname === '/api/vote') {
@@ -218,6 +360,16 @@ const server = http.createServer(async (req, res) => {
       lastEvent = { id: Date.now(), type: 'deleted', jury: user, juryName: JURY_NAME[user], group };
       broadcast();
       return json(res, 200, { ok: true });
+    }
+
+    if (req.method === 'GET' && url.pathname === '/puanlar.xlsx') {
+      const stamp = new Date().toLocaleString('sv-SE', { timeZone: 'Europe/Istanbul' }).slice(0, 16).replace(' ', '_').replace(':', '');
+      res.writeHead(200, {
+        'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'Content-Disposition': `attachment; filename="demoday-puanlar-${stamp}.xlsx"`,
+        'Cache-Control': 'no-store'
+      });
+      return res.end(scoresXlsx());
     }
 
     if (req.method === 'GET' && url.pathname === '/events') {
