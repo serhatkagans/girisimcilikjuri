@@ -22,7 +22,7 @@ efektli gösterildiği web uygulaması. Bağımlılık yok: Node.js 22.13+ yeter
 | Girişimcilik (fikrin inovatif yönü) | 1–10 |
 | Ekip Kurma Becerisi | 1–15 |
 | Yenilikçi Fikirler Sunma ve Ürünler Tasarlayabilme | 1–15 |
-| Risk Yönetimi | 1–15 |
+| Problem ile Çözüm Uyumu | 1–15 |
 | İş Modeli Sürdürülebilir mi? | 1–15 |
 | Girişimine Finansman Kaynak Bulma / Yönetme | 1–15 |
 | Geliştirilen Fikrin (Girişimin) Sunumu | 1–15 |

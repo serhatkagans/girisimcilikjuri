@@ -83,7 +83,7 @@ const CRITERIA = [
   { name: 'Girişimcilik (fikrin inovatif yönü)', max: 10 },
   { name: 'Ekip Kurma Becerisi', max: 15 },
   { name: 'Yenilikçi Fikirler Sunma ve Ürünler Tasarlayabilme', max: 15 },
-  { name: 'Risk Yönetimi', max: 15 },
+  { name: 'Problem ile Çözüm Uyumu', max: 15 },
   { name: 'İş Modeli Sürdürülebilir mi?', max: 15 },
   { name: 'Girişimine Finansman Kaynak Bulma / Yönetme', max: 15 },
   { name: 'Geliştirilen Fikrin (Girişimin) Sunumu', max: 15 }

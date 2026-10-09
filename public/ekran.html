@@ -292,7 +292,7 @@
 <script>
 const $ = s => document.querySelector(s);
 const MEDAL = ['🥇', '🥈', '🥉'];
-const SHORT = ['Girişimcilik', 'Ekip Kurma', 'Yenilikçilik', 'Risk Yön.', 'Sürdürülebilirlik', 'Finansman', 'Sunum'];
+const SHORT = ['Girişimcilik', 'Ekip Kurma', 'Yenilikçilik', 'Problem–Çözüm', 'Sürdürülebilirlik', 'Finansman', 'Sunum'];
 const fmt = v => v.toLocaleString('tr-TR', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
 let S = null, prevRank = {}, rows = {}, lastShownId = null, leader = null, queue = Promise.resolve();
 const team = g => (S.teams && S.teams[g]) || '';
