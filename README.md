@@ -19,8 +19,8 @@ efektli gösterildiği web uygulaması. Bağımlılık yok: Node.js 22.13+ yeter
 
 | Kriter | Puan |
 |---|---|
-| Girişimcilik (fikrin inovatif yönü) | 1–10 |
-| Ekip Kurma Becerisi | 1–15 |
+| Girişimcilik (fikrin inovatif yönü) | 1–15 |
+| Ekip Kurma Becerisi | 1–10 |
 | Yenilikçi Fikirler Sunma ve Ürünler Tasarlayabilme | 1–15 |
 | Problem ile Çözüm Uyumu | 1–15 |
 | İş Modeli Sürdürülebilir mi? | 1–15 |
