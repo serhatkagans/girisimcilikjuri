@@ -38,7 +38,7 @@ const JURIES = [
   { id: 'yasinozarslan', name: 'Prof. Dr. Yasin ÖZARSLAN' },
   { id: 'eliftunalicaliskan', name: 'Prof. Dr. Elif TUNALI ÇALIŞKAN' },
   { id: 'yeldatufekci', name: 'Yelda TÜFEKÇİ' },
-  { id: 'samikaraoglan', name: 'Sami KARAOĞLAN' }
+  { id: 'sumeyyeyilmaz', name: 'Sümeyye YILMAZ' }
 ];
 const USERS = Object.fromEntries(JURIES.map(j => [j.id, SIFRE]));
 const JURY_NAME = Object.fromEntries(JURIES.map(j => [j.id, j.name]));
@@ -254,7 +254,21 @@ function scoresXlsx() {
   ]);
 }
 
-const sessions = new Map(); // token -> kullanıcı
+// Oturumlar veritabanında: sunucu yeniden başlasa da jüri girişte kalır.
+// Jeton açık tutulmaz, yalnızca SHA-256 özeti saklanır.
+const SESSION_TTL = 24 * 60 * 60 * 1000; // 24 saat
+db.exec(`CREATE TABLE IF NOT EXISTS oturumlar (
+  ozet  TEXT PRIMARY KEY,
+  juri  TEXT NOT NULL,
+  bitis INTEGER NOT NULL
+)`);
+const insertSession = db.prepare('INSERT INTO oturumlar (ozet, juri, bitis) VALUES (?, ?, ?)');
+const selectSession = db.prepare('SELECT juri, bitis FROM oturumlar WHERE ozet = ?');
+const deleteSession = db.prepare('DELETE FROM oturumlar WHERE ozet = ?');
+const purgeSessions = db.prepare('DELETE FROM oturumlar WHERE bitis < ?');
+const tokenHash = t => crypto.createHash('sha256').update(t).digest('hex');
+purgeSessions.run(Date.now());
+
 const clients = new Set();  // SSE bağlantıları
 let lastEvent = null;       // son oy (efekt için)
 
@@ -284,7 +298,11 @@ function readBody(req) {
 function auth(req) {
   const h = req.headers.authorization || '';
   const token = h.startsWith('Bearer ') ? h.slice(7) : null;
-  return token ? sessions.get(token) : null;
+  if (!token) return null;
+  const s = selectSession.get(tokenHash(token));
+  // Süresi dolmuş ya da listeden çıkarılmış jürinin oturumu geçersiz
+  if (!s || s.bitis < Date.now() || !USERS[s.juri]) return null;
+  return s.juri;
 }
 
 const MIME = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.svg': 'image/svg+xml', '.webp': 'image/webp' };
@@ -305,11 +323,18 @@ const server = http.createServer(async (req, res) => {
       if (USERS[u] && safeEqual(USERS[u], password || '')) {
         failures.delete(ip);
         const token = crypto.randomBytes(24).toString('hex');
-        sessions.set(token, u);
+        purgeSessions.run(now);
+        insertSession.run(tokenHash(token), u, now + SESSION_TTL);
         return json(res, 200, { token, user: u, name: JURY_NAME[u] });
       }
       failures.set(ip, { count: (f ? f.count : 0) + 1, until: now + FAIL_WINDOW });
       return json(res, 401, { error: 'Kullanıcı adı veya şifre hatalı' });
+    }
+
+    if (req.method === 'POST' && url.pathname === '/api/logout') {
+      const h = req.headers.authorization || '';
+      if (h.startsWith('Bearer ')) deleteSession.run(tokenHash(h.slice(7)));
+      return json(res, 200, { ok: true });
     }
 
     if (req.method === 'GET' && url.pathname === '/api/state') {

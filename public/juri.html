@@ -245,7 +245,13 @@
 
 <script>
 const $ = s => document.querySelector(s);
-let token = sessionStorage.getItem('juriToken');
+// Oturum tarayıcı kapansa da kalır (sunucuda 24 saat geçerli)
+const store = {
+  get() { try { return localStorage.getItem('juriToken'); } catch { return null; } },
+  set(t) { try { localStorage.setItem('juriToken', t); } catch {} },
+  clear() { try { localStorage.removeItem('juriToken'); sessionStorage.removeItem('juriToken'); } catch {} }
+};
+let token = store.get();
 let data = null;        // { user, groups, criteria, votes }
 let scores = [];
 const team = g => (data.teams && data.teams[g]) || '';
@@ -265,17 +271,20 @@ $('#loginForm').onsubmit = async e => {
   $('#loginErr').textContent = '';
   try {
     const r = await api('api/login', { method: 'POST', body: JSON.stringify({ username: $('#u').value, password: $('#p').value }) });
-    token = r.token; sessionStorage.setItem('juriToken', token);
+    token = r.token; store.set(token);
     $('#p').value = '';
     await start();
   } catch (err) { $('#loginErr').textContent = err.message; }
 };
 
 function logout() {
-  token = null; sessionStorage.removeItem('juriToken');
+  token = null; store.clear();
   $('#app').classList.add('hidden'); $('#login').classList.remove('hidden');
 }
-$('#logout').onclick = logout;
+$('#logout').onclick = () => {
+  fetch('api/logout', { method: 'POST', headers: { Authorization: 'Bearer ' + token } }).catch(() => {});
+  logout();
+};
 
 async function start() {
   data = await api('api/my-votes');
@@ -452,7 +461,13 @@ function showResult(g, sc, total) {
   }
 }
 
-if (token) start().catch(logout);
+// Açılışta ağ kopuksa oturum silinmez, birkaç saniyede bir yeniden denenir
+// (geçersiz oturumda api() zaten 401 ile çıkış yapar)
+async function resume() {
+  try { await start(); }
+  catch (err) { if (token) { $('#loginErr').textContent = 'Bağlantı bekleniyor…'; setTimeout(resume, 4000); } }
+}
+if (token) resume();
 </script>
 </body>
 </html>
