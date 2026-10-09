@@ -84,7 +84,7 @@ const CRITERIA = [
   { name: 'Ekip Kurma Becerisi', max: 15 },
   { name: 'Yenilikçi Fikirler Sunma ve Ürünler Tasarlayabilme', max: 15 },
   { name: 'Risk Yönetimi', max: 15 },
-  { name: 'Kanvas İş Modeli oluşturma', max: 15 },
+  { name: 'İş Modeli Sürdürülebilir mi?', max: 15 },
   { name: 'Girişimine Finansman Kaynak Bulma / Yönetme', max: 15 },
   { name: 'Geliştirilen Fikrin (Girişimin) Sunumu', max: 15 }
 ];

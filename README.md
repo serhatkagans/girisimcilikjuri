@@ -23,7 +23,7 @@ efektli gösterildiği web uygulaması. Bağımlılık yok: Node.js 22.13+ yeter
 | Ekip Kurma Becerisi | 1–15 |
 | Yenilikçi Fikirler Sunma ve Ürünler Tasarlayabilme | 1–15 |
 | Risk Yönetimi | 1–15 |
-| Kanvas İş Modeli oluşturma | 1–15 |
+| İş Modeli Sürdürülebilir mi? | 1–15 |
 | Girişimine Finansman Kaynak Bulma / Yönetme | 1–15 |
 | Geliştirilen Fikrin (Girişimin) Sunumu | 1–15 |
 
