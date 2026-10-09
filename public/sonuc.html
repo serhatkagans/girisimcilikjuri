@@ -1,0 +1,298 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Demo Day Sonuçları · ETKİM Genç Tekno Girişimcilik Kampı</title>
+<style>
+  :root {
+    --bg: #0f172a; --panel: #111c33; --line: #24345a; --text: #e8eefc; --muted: #8fa3c7; --accent: #22d3ee;
+    --gold: #fbbf24; --gold2: #fde68a; --silver: #cbd5e1; --silver2: #f1f5f9; --bronze: #d97706; --bronze2: #fdba74;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body { margin: 0; font-family: "Segoe UI", system-ui, sans-serif; background: radial-gradient(ellipse at 50% 110%, #1e2b55 0%, var(--bg) 60%); color: var(--text); overflow: hidden; display: flex; flex-direction: column; }
+  button { font: inherit; touch-action: manipulation; }
+
+  /* Arka plan: bulanık renkler ve yıldızlar */
+  .bg { position: fixed; inset: 0; z-index: -1; overflow: hidden; pointer-events: none; }
+  .bg .blob { position: absolute; width: 560px; height: 560px; border-radius: 50%; filter: blur(100px); opacity: .25; animation: drift 24s ease-in-out infinite alternate; }
+  .bg .blob:nth-child(1) { background: #3987e5; left: -140px; top: -120px; }
+  .bg .blob:nth-child(2) { background: #a78bfa; right: -160px; top: 20%; animation-duration: 30s; }
+  .bg .blob:nth-child(3) { background: #b45309; left: 35%; bottom: -260px; animation-duration: 36s; }
+  @keyframes drift { to { transform: translate(80px, 60px) scale(1.15); } }
+  .bg .star { position: absolute; width: 3px; height: 3px; border-radius: 50%; background: #fff; animation: twinkle 3s ease-in-out infinite; }
+  @keyframes twinkle { 0%, 100% { opacity: .1; } 50% { opacity: .9; } }
+  #confetti { position: fixed; inset: 0; pointer-events: none; z-index: 60; }
+
+  header { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 14px 28px; }
+  .brand { display: flex; align-items: center; gap: 16px; }
+  .logo { height: 46px; background: #fff; border-radius: 10px; padding: 5px 10px; }
+  .brand div { font-size: 15px; color: var(--muted); line-height: 1.3; }
+  .brand b { display: block; color: var(--text); font-size: 18px; }
+  .tools { display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: 13px; }
+  .tools .warn { color: #fbbf24; }
+  .ghost { background: transparent; border: 1px solid var(--line); color: var(--muted); border-radius: 8px; padding: 6px 10px; cursor: pointer; text-decoration: none; font-size: 13px; }
+  .ghost:hover { color: var(--text); border-color: var(--muted); }
+
+  .title { text-align: center; margin-top: 1vh; }
+  .title h1 { margin: 0; font-size: clamp(30px, 5vw, 64px); font-weight: 900; letter-spacing: .02em; background: linear-gradient(90deg, var(--gold2), #fff, #a5f3fc); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .title p { margin: 4px 0 0; color: var(--muted); font-size: clamp(14px, 1.4vw, 19px); min-height: 1.4em; }
+  body.champ .title h1 { animation: glow 1.6s ease-in-out infinite alternate; }
+  @keyframes glow { to { filter: drop-shadow(0 0 18px rgba(251,191,36,.7)); } }
+
+  /* Podyum */
+  .stage { flex: 1; min-height: 0; display: flex; align-items: flex-end; justify-content: center; padding: 0 3vw; }
+  .podium { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: end; gap: 2vw; width: min(1300px, 100%); }
+  .col { position: relative; display: flex; flex-direction: column; align-items: center; }
+  .slot { width: 100%; perspective: 1400px; margin-bottom: 18px; position: relative; z-index: 2; }
+  .card { position: relative; width: 100%; height: clamp(220px, 34vh, 360px); transform-style: preserve-3d; transition: transform 1s cubic-bezier(.3,1.4,.4,1); }
+  .card.open { transform: rotateY(180deg); }
+  .face { position: absolute; inset: 0; border-radius: 22px; backface-visibility: hidden; -webkit-backface-visibility: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 18px; overflow: hidden; }
+  .front { background: linear-gradient(145deg, #16233f, #0e1830); border: 2px dashed var(--line); }
+  .front .q { font-size: clamp(80px, 12vh, 140px); font-weight: 900; color: #2c3f6b; line-height: 1; }
+  .front .h { color: var(--muted); font-size: 15px; margin-top: 6px; letter-spacing: .08em; text-transform: uppercase; }
+  .front::after { content: ""; position: absolute; inset: 0; background: linear-gradient(110deg, transparent 30%, rgba(255,255,255,.07) 50%, transparent 70%); transform: translateX(-100%); animation: shine 3.2s ease-in-out infinite; }
+  @keyframes shine { 60%, 100% { transform: translateX(100%); } }
+  .back { transform: rotateY(180deg); border: 2px solid var(--c); background: radial-gradient(circle at 50% 0%, color-mix(in srgb, var(--c) 35%, transparent), #0e1830 75%); box-shadow: 0 0 60px color-mix(in srgb, var(--c) 45%, transparent); }
+  .back .m { font-size: clamp(48px, 8vh, 84px); line-height: 1; }
+  .back .g { font-size: clamp(30px, 4.4vw, 60px); font-weight: 900; line-height: 1.05; margin-top: 6px; }
+  .back .t { font-size: clamp(16px, 1.8vw, 26px); color: var(--c2); font-weight: 600; margin-top: 4px; }
+  .back .s { margin-top: 12px; font-size: clamp(28px, 3.4vw, 48px); font-weight: 800; font-variant-numeric: tabular-nums; color: var(--c2); }
+  .back .s small { font-size: .42em; color: var(--muted); font-weight: 400; margin-left: 4px; }
+
+  .ped { width: 100%; border-radius: 16px 16px 0 0; display: flex; align-items: flex-start; justify-content: center; padding-top: 14px; font-size: clamp(60px, 9vh, 110px); font-weight: 900; color: rgba(255,255,255,.9); text-shadow: 0 4px 16px rgba(0,0,0,.35); background: linear-gradient(180deg, var(--c), color-mix(in srgb, var(--c) 45%, #0f172a)); opacity: .45; transition: opacity .6s, box-shadow .6s; }
+  .col.c1 .ped { height: 30vh; } .col.c2 .ped { height: 21vh; } .col.c3 .ped { height: 14vh; }
+  .col.c1 { --c: var(--gold); --c2: var(--gold2); }
+  .col.c2 { --c: var(--silver); --c2: var(--silver2); }
+  .col.c3 { --c: var(--bronze); --c2: var(--bronze2); }
+  .col.done .ped { opacity: 1; box-shadow: 0 0 50px color-mix(in srgb, var(--c) 50%, transparent); }
+
+  /* Davul: kart titrer, ışık huzmesi iner */
+  .card.roll { animation: roll .11s linear infinite; }
+  @keyframes roll { 0% { transform: rotate(-1.5deg) scale(1.01); } 50% { transform: rotate(1.5deg) scale(1.03); } 100% { transform: rotate(-1.5deg) scale(1.01); } }
+  .beam { position: absolute; left: 50%; bottom: 0; width: 160%; height: 140vh; transform: translateX(-50%); background: conic-gradient(from 180deg at 50% 0%, transparent 160deg, color-mix(in srgb, var(--c) 22%, transparent) 172deg, color-mix(in srgb, var(--c) 30%, transparent) 180deg, color-mix(in srgb, var(--c) 22%, transparent) 188deg, transparent 200deg); opacity: 0; transition: opacity .5s; pointer-events: none; z-index: 1; }
+  .col.lit .beam { opacity: 1; }
+  .rays { position: absolute; left: 50%; top: 35%; width: 900px; height: 900px; margin: -450px 0 0 -450px; background: repeating-conic-gradient(rgba(251,191,36,.13) 0 8deg, transparent 8deg 20deg); border-radius: 50%; mask: radial-gradient(circle, #000 20%, transparent 65%); -webkit-mask: radial-gradient(circle, #000 20%, transparent 65%); opacity: 0; transition: opacity 1s; pointer-events: none; z-index: 0; animation: spin 30s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  body.champ .c1 .rays { opacity: 1; }
+  .crown { position: absolute; top: -100px; left: 50%; font-size: 70px; transform: translate(-50%, -60vh); opacity: 0; z-index: 3; transition: transform 1s cubic-bezier(.3,1.5,.5,1) .5s, opacity .3s .5s; }
+  body.champ .crown { transform: translate(-50%, 0) rotate(-8deg); opacity: 1; }
+
+  /* Kontrol */
+  .ctrl { display: flex; justify-content: center; align-items: center; gap: 12px; padding: 16px 0 22px; position: relative; z-index: 5; }
+  .go { border: 0; border-radius: 14px; padding: 16px 34px; font-size: clamp(18px, 1.8vw, 24px); font-weight: 800; cursor: pointer; color: #0b1020; background: linear-gradient(135deg, var(--c2, #a5f3fc), var(--c, var(--accent))); box-shadow: 0 8px 30px color-mix(in srgb, var(--c, #22d3ee) 40%, transparent); transition: transform .15s, opacity .3s; }
+  .go:hover { transform: translateY(-2px); }
+  .go:disabled { opacity: .35; cursor: wait; transform: none; }
+  .go.n3 { --c: var(--bronze); --c2: var(--bronze2); } .go.n2 { --c: var(--silver); --c2: var(--silver2); } .go.n1 { --c: var(--gold); --c2: var(--gold2); }
+  .hint { color: var(--muted); font-size: 12px; position: absolute; right: 28px; bottom: 26px; }
+
+  @media (max-width: 760px) {
+    body { overflow: auto; }
+    header { padding: 12px 14px; } .logo { height: 34px; } .brand div { display: none; } .hint { display: none; }
+    .stage { padding: 0 10px; } .podium { gap: 8px; }
+    .face { padding: 8px; border-radius: 14px; } .card { height: 200px; }
+    .back .g { font-size: 20px; } .back .t { font-size: 12px; } .back .s { font-size: 20px; } .back .m { font-size: 36px; }
+    .crown { font-size: 40px; top: -58px; }
+  }
+</style>
+</head>
+<body>
+<div class="bg" id="bg"><span class="blob"></span><span class="blob"></span><span class="blob"></span></div>
+<canvas id="confetti"></canvas>
+
+<header>
+  <div class="brand"><img class="logo" src="etkim.png" alt="ETKİM"><div><b>Genç Tekno Girişimcilik Kampı</b>Demo Day</div></div>
+  <div class="tools">
+    <span id="status">Bağlanıyor…</span>
+    <a class="ghost" href="./">← Sıralama</a>
+    <button class="ghost" id="fs">⛶ Tam ekran</button>
+  </div>
+</header>
+
+<div class="title"><h1 id="h1">🏆 Demo Day Sonuçları</h1><p id="sub">İlk üç sırayı açıklıyoruz</p></div>
+
+<section class="stage">
+  <div class="podium" id="podium"></div>
+</section>
+
+<div class="ctrl">
+  <button class="go n3" id="go" disabled>🥉 3.'yü Açıkla</button>
+  <button class="ghost" id="reset" style="display:none">↺ Baştan</button>
+  <span class="hint">Boşluk / → : sıradaki · R : baştan</span>
+</div>
+
+<script>
+const $ = s => document.querySelector(s);
+const MEDAL = { 1: '🥇', 2: '🥈', 3: '🥉' };
+const BTN = { 3: "🥉 3.'yü Açıkla", 2: "🥈 2.'yi Açıkla", 1: "🥇 1.'yi Açıkla" };
+const ROLL = { 3: 1300, 2: 1800, 1: 2800 }; // davul süresi (ms)
+const fmt = v => v.toLocaleString('tr-TR', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+const wait = ms => new Promise(r => setTimeout(r, ms));
+
+let S = null;        // sunucudan gelen son durum
+let frozen = null;   // ilk açıklamada dondurulan ilk üç
+let next = 3, busy = false;
+
+// Yıldızlar
+for (let i = 0; i < 70; i++) {
+  const s = document.createElement('span');
+  s.className = 'star';
+  s.style.left = Math.random() * 100 + '%'; s.style.top = Math.random() * 100 + '%';
+  s.style.animationDelay = (Math.random() * 3) + 's';
+  s.style.animationDuration = (2 + Math.random() * 3) + 's';
+  $('#bg').appendChild(s);
+}
+
+// Podyum: soldan sağa 2. - 1. - 3.
+$('#podium').innerHTML = [2, 1, 3].map(r => `
+  <div class="col c${r}" id="col${r}">
+    <div class="beam"></div>${r === 1 ? '<div class="rays"></div><div class="crown">👑</div>' : ''}
+    <div class="slot"><div class="card" id="card${r}">
+      <div class="face front"><div class="q">?</div><div class="h">${r}. sıra</div></div>
+      <div class="face back" id="back${r}"></div>
+    </div></div>
+    <div class="ped">${r}</div>
+  </div>`).join('');
+
+// Sıralama ana ekrandakiyle aynı: ortalama, sonra oy veren jüri sayısı, sonra sunum sırası
+function ranking() {
+  const order = Object.fromEntries(S.groups.map((g, i) => [g, i]));
+  return S.groups.map(g => {
+    const done = S.juries.map(j => S.votes[j.id][g]).filter(Boolean);
+    return { g, team: (S.teams || {})[g] || '', n: done.length, avg: done.length ? done.reduce((a, v) => a + v.total, 0) / done.length : 0 };
+  }).filter(x => x.n).sort((a, b) => b.avg - a.avg || b.n - a.n || order[a.g] - order[b.g]);
+}
+
+function updateStatus() {
+  const J = S.juries.length, total = S.groups.length * J;
+  const votes = S.juries.reduce((a, j) => a + Object.keys(S.votes[j.id]).length, 0);
+  const el = $('#status');
+  if (frozen) { el.textContent = 'Sonuçlar donduruldu'; el.className = ''; }
+  else if (votes < total) { el.textContent = `⚠ Oylama sürüyor: ${votes} / ${total} oy`; el.className = 'warn'; }
+  else { el.textContent = `✓ Oylama tamamlandı · ${votes} oy`; el.className = ''; }
+}
+
+function setButton() {
+  const go = $('#go');
+  if (next >= 1) { go.textContent = BTN[next]; go.className = 'go n' + next; go.style.display = ''; }
+  else go.style.display = 'none';
+  $('#reset').style.display = next < 3 ? '' : 'none';
+  go.disabled = busy || !S;
+}
+
+async function reveal() {
+  if (busy || !S || next < 1) return;
+  if (!frozen) frozen = ranking().slice(0, 3);
+  const r = next, it = frozen[r - 1];
+  busy = true; setButton(); updateStatus();
+
+  const col = $('#col' + r), card = $('#card' + r);
+  $('#back' + r).innerHTML = it
+    ? `<div class="m">${MEDAL[r]}</div><div class="g">${it.g}</div><div class="t">${it.team}</div><div class="s"><span id="sc${r}">0,0</span><small>/ 100</small></div>`
+    : `<div class="m">${MEDAL[r]}</div><div class="g">—</div><div class="t">Puanlanan grup yok</div>`;
+  $('#sub').textContent = r === 1 ? 'Ve birinci…' : `${r}. sırada…`;
+
+  col.classList.add('lit');
+  card.classList.add('roll');
+  await wait(ROLL[r]);
+  card.classList.remove('roll');
+  card.classList.add('open');
+  col.classList.add('done');
+  await wait(450);
+
+  if (it) countUp($('#sc' + r), it.avg, r === 1 ? 1800 : 1100);
+  const rect = card.getBoundingClientRect(), origin = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 3 };
+  if (r === 3) confetti(120, ['#d97706', '#fdba74', '#fff7ed', '#22d3ee'], origin);
+  if (r === 2) confetti(170, ['#cbd5e1', '#f1f5f9', '#ffffff', '#a5f3fc'], origin);
+  if (r === 1) champion(origin, it);
+  else $('#sub').textContent = it ? `${r}. ${it.g} · ${it.team}` : `${r}. sıra boş`;
+
+  setTimeout(() => col.classList.remove('lit'), 1500);
+  next--; busy = false; setButton();
+}
+
+async function champion(origin, it) {
+  document.body.classList.add('champ');
+  $('#h1').textContent = '🏆 Tebrikler!';
+  $('#sub').textContent = it ? `Demo Day birincisi: ${it.g} · ${it.team}` : '';
+  const gold = ['#fbbf24', '#fde68a', '#ffffff', '#f59e0b', '#22d3ee', '#a78bfa'];
+  confetti(260, gold, origin);
+  for (let k = 0; k < 6; k++) {
+    await wait(700);
+    confetti(70, gold, { x: 0, y: innerHeight * .7 }, -1);
+    confetti(70, gold, { x: innerWidth, y: innerHeight * .7 }, 1);
+    if (k % 2) confetti(140, gold);
+  }
+}
+
+function countUp(el, to, dur) {
+  const t0 = performance.now();
+  (function tick(t) {
+    const p = Math.min(1, (t - t0) / dur);
+    el.textContent = fmt(to * (1 - Math.pow(1 - p, 3)));
+    if (p < 1) requestAnimationFrame(tick);
+  })(t0);
+}
+
+function reset() {
+  if (busy) return;
+  frozen = null; next = 3;
+  document.body.classList.remove('champ');
+  $('#h1').textContent = '🏆 Demo Day Sonuçları';
+  $('#sub').textContent = 'İlk üç sırayı açıklıyoruz';
+  for (const r of [1, 2, 3]) { $('#card' + r).classList.remove('open'); $('#col' + r).classList.remove('done', 'lit'); }
+  setButton(); if (S) updateStatus();
+}
+
+$('#go').onclick = reveal;
+$('#reset').onclick = reset;
+$('#fs').onclick = () => document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen();
+addEventListener('keydown', e => {
+  if (e.key === ' ' || e.key === 'ArrowRight' || e.key === 'Enter' || e.key === 'PageDown') { e.preventDefault(); reveal(); }
+  if (e.key === 'r' || e.key === 'R') reset();
+  if (e.key === 'f' || e.key === 'F') $('#fs').click();
+});
+
+// Konfeti (ana ekrandakiyle aynı); side: -1 soldan, 1 sağdan top atışı
+const cv = $('#confetti'), cx = cv.getContext('2d');
+let parts = [], running = false;
+function sizeCanvas() { cv.width = innerWidth; cv.height = innerHeight; }
+sizeCanvas(); addEventListener('resize', sizeCanvas);
+function confetti(n, colors, origin, side) {
+  for (let i = 0; i < n; i++) {
+    let a, sp;
+    if (side) { a = side < 0 ? -Math.PI / 3 + (Math.random() - .5) * .6 : -Math.PI * 2 / 3 + (Math.random() - .5) * .6; sp = 12 + Math.random() * 10; }
+    else if (origin) { a = Math.random() * Math.PI * 2; sp = 4 + Math.random() * 10; }
+    else { a = Math.PI / 2; sp = 2 + Math.random() * 4; }
+    parts.push({
+      x: origin ? origin.x : Math.random() * innerWidth, y: origin ? origin.y : -20,
+      vx: Math.cos(a) * sp + (origin ? 0 : Math.random() * 4 - 2), vy: Math.sin(a) * sp - (origin && !side ? 6 : 0),
+      w: 6 + Math.random() * 8, h: 4 + Math.random() * 6, r: Math.random() * 6, vr: Math.random() * .3 - .15,
+      c: colors[Math.floor(Math.random() * colors.length)], life: 0
+    });
+  }
+  if (!running) { running = true; requestAnimationFrame(step); }
+}
+function step() {
+  cx.clearRect(0, 0, cv.width, cv.height);
+  parts = parts.filter(p => p.y < cv.height + 40 && p.life < 420);
+  for (const p of parts) {
+    p.life++; p.vy += .18; p.vx *= .99; p.x += p.vx; p.y += p.vy; p.r += p.vr;
+    cx.save(); cx.translate(p.x, p.y); cx.rotate(p.r); cx.fillStyle = p.c;
+    cx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h * Math.abs(Math.cos(p.life / 8))); cx.restore();
+  }
+  if (parts.length) requestAnimationFrame(step); else { running = false; cx.clearRect(0, 0, cv.width, cv.height); }
+}
+
+// Canlı durum: açıklama başlayana kadar güncel kalır, sonra ilk üç donar
+function connect() {
+  const es = new EventSource('events');
+  es.onmessage = e => { S = JSON.parse(e.data); updateStatus(); setButton(); };
+  es.onerror = () => { if (!S) $('#status').textContent = 'Bağlantı bekleniyor…'; };
+}
+connect();
+setButton();
+</script>
+</body>
+</html>

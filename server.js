@@ -312,6 +312,10 @@ const server = http.createServer(async (req, res) => {
       return json(res, 401, { error: 'Kullanıcı adı veya şifre hatalı' });
     }
 
+    if (req.method === 'GET' && url.pathname === '/api/state') {
+      return json(res, 200, { ...state(), lastEvent: null });
+    }
+
     if (req.method === 'GET' && url.pathname === '/api/durum') {
       return json(res, 200, { ok: true });
     }
@@ -387,7 +391,7 @@ const server = http.createServer(async (req, res) => {
     }
 
     if (req.method === 'GET') {
-      const routes = { '/': '/ekran.html', '/juri': '/juri.html' };
+      const routes = { '/': '/ekran.html', '/juri': '/juri.html', '/sonuc': '/sonuc.html' };
       const file = routes[url.pathname] || decodeURIComponent(url.pathname);
       const full = path.normalize(path.join(PUBLIC_DIR, file));
       if (!full.startsWith(PUBLIC_DIR)) return json(res, 403, { error: 'Yasak' });
