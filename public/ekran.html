@@ -258,7 +258,7 @@
 <canvas id="confetti"></canvas>
 <div id="fx"></div>
 <header>
-  <div class="brand"><img class="logo" src="etkim.png" alt="ETKİM"><h1>Genç Tekno Girişimcilik Kampı <span class="trophy">🏆</span> <em>Demo Day Sunum Listesi</em><small id="progress">Bağlanıyor…</small></h1></div>
+  <div class="brand"><img class="logo" src="etkim.png" alt="ETKİM"><h1><span id="hAd">Genç Tekno Girişimcilik Kampı</span> <span class="trophy">🏆</span> <em><span class="evName">Demo Day</span> Sunum Listesi</em><small id="progress">Bağlanıyor…</small></h1></div>
   <div class="hright">
     <span class="live off" id="live"><i></i><span>Canlı</span></span>
     <a class="fs" href="puanlar.xlsx" download style="text-decoration:none" title="Güncel puanları Excel dosyası olarak indir">⬇ XLSX indir</a>
@@ -269,7 +269,7 @@
 </header>
 <main>
   <section class="panel">
-    <h2><span>Demo Day Sıralaması</span><span id="maxNote"></span></h2>
+    <h2><span><span class="evName">Demo Day</span> Sıralaması</span><span id="maxNote"></span></h2>
     <div class="cols"><span>Sıra</span><span>Grup</span><span>Jüri ortalaması</span><span class="r pj">Oy veren jüri</span><span class="r">Ortalama</span></div>
     <div id="board"></div>
   </section>
@@ -292,7 +292,6 @@
 <script>
 const $ = s => document.querySelector(s);
 const MEDAL = ['🥇', '🥈', '🥉'];
-const SHORT = ['Girişimcilik', 'Ekip Kurma', 'Yenilikçilik', 'Problem–Çözüm', 'Sürdürülebilirlik', 'Finansman', 'Sunum'];
 const fmt = v => v.toLocaleString('tr-TR', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
 let S = null, prevRank = {}, rows = {}, lastShownId = null, leader = null, queue = Promise.resolve();
 const team = g => (S.teams && S.teams[g]) || '';
@@ -352,9 +351,14 @@ function stats(g) {
 
 // Sahnedeki ekip: sunum sırasında (S.groups) tüm jürilerin henüz oylamadığı ilk il.
 // Beş jüri de oy verince sahne kendiliğinden sıradaki ile geçer.
+// Yönetim panelinden il seçildiyse (S.sahne) o il sahnededir.
 function stageInfo() {
   const J = S.juries.length;
   const open = S.groups.filter(g => stats(g).n < J);
+  if (S.sahne) {
+    const rest = open.filter(g => g !== S.sahne), after = rest.filter(g => S.groups.indexOf(g) > S.groups.indexOf(S.sahne));
+    return { cur: S.sahne, next: after[0] || rest[0] || null, left: rest.length };
+  }
   return { cur: open[0] || null, next: open[1] || null, left: Math.max(0, open.length - 1) };
 }
 
@@ -366,7 +370,7 @@ function renderStage(sg) {
   stageKey = sg.cur;
   if (!sg.cur) {
     el.className = 'stage done' + (changed ? ' anim' : '');
-    el.innerHTML = `<div class="lbl">✓ DEMO DAY</div><div class="now">Tüm sunumlar tamamlandı</div>`;
+    el.innerHTML = `<div class="lbl">✓ ${(S.event.etkinlik || 'Demo Day').toLocaleUpperCase('tr')}</div><div class="now">Tüm sunumlar tamamlandı</div>`;
     return;
   }
   const st = stats(sg.cur);
@@ -407,7 +411,7 @@ function render(highlight) {
   board.style.height = PHONE.matches ? 50 * S.groups.length + 'px' : '';
   const rowH = Math.max(30, board.clientHeight / S.groups.length);
   const J = S.juries.length;
-  $('#maxNote').textContent = `${J} jürinin ortalaması · azami 100 puan`;
+  $('#maxNote').textContent = `${J} jürinin ortalaması · azami ${S.maxTotal} puan`;
   const nVotes = S.juries.reduce((a, j) => a + Object.keys(S.votes[j.id]).length, 0);
   $('#progress').textContent = `${nVotes} / ${S.groups.length * J} oy kullanıldı · ayrıntı için ile tıklayın`;
 
@@ -505,7 +509,7 @@ function renderDetail(g, animate) {
       <button class="dclose" id="dclose" title="Kapat">✕</button></div>
     </div>
     <div class="dscroll"><table class="dtable">
-      <thead><tr><th>Jüri</th>${S.criteria.map((c, i) => `<th title="${c.name}">${SHORT[i] || c.name}<small>/${c.max}</small></th>`).join('')}<th>Toplam<small>/100</small></th></tr></thead>
+      <thead><tr><th>Jüri</th>${S.criteria.map((c, i) => `<th title="${c.name}">${c.short || c.name}<small>/${c.max}</small></th>`).join('')}<th>Toplam<small>/${S.maxTotal}</small></th></tr></thead>
       <tbody>${S.juries.map((j, k) => {
         const v = st.per[k];
         const delay = animate ? `style="animation-delay:${.08 + k * .09}s"` : 'style="animation:none;opacity:1"';
@@ -591,6 +595,8 @@ function connect() {
   es.onmessage = m => {
     const data = JSON.parse(m.data);
     if (!S) return init(data);
+    // Yönetim panelinde iller, jüriler, kriterler ya da logolar değişti: ekran baştan kurulur
+    if (data.surum !== S.surum) return location.reload();
     const ev = data.lastEvent && data.lastEvent.id !== lastShownId ? data.lastEvent : null;
     // Efektler sırayla oynatılır; art arda gelen oylar birbirini kesmez
     queue = queue.then(async () => {
@@ -605,7 +611,10 @@ function connect() {
 function renderFooter() {
   $('#sponsors').innerHTML = (S.sponsors || []).map(f => `<img src="logolar/${encodeURIComponent(f)}" alt="">`).join('');
   const ev = S.event || {};
-  $('#evinfo').innerHTML = ['<b>ETKİM Genç Tekno Girişimcilik Kampı</b>', 'Demo Day', ev.tarih, ev.yer].filter(Boolean).join(' · ');
+  $('#evinfo').innerHTML = [`<b>${[ev.kurum, ev.ad].filter(Boolean).join(' ')}</b>`, ev.etkinlik, ev.tarih, ev.yer].filter(Boolean).join(' · ');
+  $('#hAd').textContent = ev.ad || '';
+  document.querySelectorAll('.evName').forEach(e => e.textContent = ev.etkinlik || '');
+  document.title = `${ev.etkinlik} Sunum Listesi · ${[ev.kurum, ev.ad].filter(Boolean).join(' ')}`;
 }
 function tickClock() { $('#clock').textContent = new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }); }
 tickClock(); setInterval(tickClock, 10000);

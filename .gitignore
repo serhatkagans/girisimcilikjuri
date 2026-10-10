@@ -13,3 +13,6 @@ node_modules/
 # Sunucuya ozel dagitim dosyalari
 deploy/
 DAGITIM.md
+
+# Panelden yüklenen logolar (DATA_DIR yerelde proje klasörü)
+/logolar/

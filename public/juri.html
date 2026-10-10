@@ -184,7 +184,7 @@
   <form class="card" id="loginForm" autocomplete="off">
     <img class="logo" src="etkim.png" alt="ETKİM">
     <h1>Jüri Girişi</h1>
-    <p>Genç Tekno Girişimcilik Kampı · Demo Day</p>
+    <p id="loginSub">Genç Tekno Girişimcilik Kampı · Demo Day</p>
     <label for="u">Kullanıcı adı</label>
     <input id="u" required autofocus placeholder="isim ve soyisim bitişik, ör. alidemir" autocapitalize="none" spellcheck="false">
     <label for="p">Şifre</label>
@@ -196,7 +196,7 @@
 
 <section id="app" class="hidden">
   <header>
-    <div class="brand"><img class="logo" src="etkim.png" alt="ETKİM"><h1>Demo Day Jüri Paneli<small>Genç Tekno Girişimcilik Kampı</small></h1></div>
+    <div class="brand"><img class="logo" src="etkim.png" alt="ETKİM"><h1><span class="evName">Demo Day</span> Jüri Paneli<small class="evAd">Genç Tekno Girişimcilik Kampı</small></h1></div>
     <div class="who"><span><span class="hi">Hoş geldiniz, </span><b><span class="full" id="who"></span><span class="short" id="whoShort"></span></b></span><button class="btn ghost" id="logout">Çıkış</button></div>
   </header>
   <main>
@@ -262,7 +262,7 @@ async function api(path, opts = {}) {
   const r = await fetch(path, { ...opts, headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token } });
   const body = await r.json().catch(() => ({}));
   if (r.status === 401 && path !== 'api/login') { logout(); throw new Error(body.error || 'Oturum geçersiz'); }
-  if (!r.ok) throw new Error(body.error || 'Hata');
+  if (!r.ok) throw Object.assign(new Error(body.error || 'Hata'), { yenile: body.yenile });
   return body;
 }
 
@@ -286,8 +286,19 @@ $('#logout').onclick = () => {
   logout();
 };
 
+// Etkinlik adı yönetim panelinden gelir
+function applyBrand(ev) {
+  if (!ev) return;
+  $('#loginSub').textContent = [ev.ad, ev.etkinlik].filter(Boolean).join(' · ');
+  document.querySelectorAll('.evName').forEach(e => e.textContent = ev.etkinlik || '');
+  document.querySelectorAll('.evAd').forEach(e => e.textContent = ev.ad || '');
+  document.title = `Jüri Paneli · ${[ev.kurum, ev.etkinlik].filter(Boolean).join(' ')}`;
+}
+fetch('api/durum').then(r => r.json()).then(d => applyBrand(d.event)).catch(() => {});
+
 async function start() {
   data = await api('api/my-votes');
+  applyBrand(data.event);
   $('#who').textContent = data.name;
   $('#whoShort').textContent = data.name.replace(/^(Prof\.|Doç\.|Dr\.|Öğr\. Gör\.|\s)+/g, '');
   $('#login').classList.add('hidden'); $('#app').classList.remove('hidden');
@@ -296,6 +307,7 @@ async function start() {
   renderGroups();
   renderMyList();
   loadGroup();
+  $('#formErr').textContent = data.oylamaAcik ? '' : 'Oylama şu anda kapalı. Yönetici açtığında puan verebilirsiniz.';
 }
 
 function renderGroups() {
@@ -414,7 +426,7 @@ $('#mOk').onclick = async () => {
   $('#mOk').disabled = true;
   try {
     if (modalAction === 'delete') return await doDelete(deleteTarget);
-    const r = await api('api/vote', { method: 'POST', body: JSON.stringify({ group: g, scores: sc }) });
+    const r = await api('api/vote', { method: 'POST', body: JSON.stringify({ group: g, scores: sc, surum: data.surum }) });
     data.votes[g] = { scores: sc, total: r.total };
     $('#modal').classList.add('hidden');
     showResult(g, sc, r.total);
@@ -422,6 +434,7 @@ $('#mOk').onclick = async () => {
     showResultOnPhone();
   } catch (err) {
     $('#modal').classList.add('hidden');
+    if (err.yenile) { const g0 = $('#group').value; await start().catch(() => {}); if (data.groups.includes(g0)) { $('#group').value = g0; loadGroup(); } }
     $('#formErr').textContent = err.message;
   } finally { $('#mOk').disabled = false; }
 };

@@ -102,7 +102,7 @@
 <canvas id="confetti"></canvas>
 
 <header>
-  <div class="brand"><img class="logo" src="etkim.png" alt="ETKİM"><div><b>Genç Tekno Girişimcilik Kampı</b>Demo Day</div></div>
+  <div class="brand"><img class="logo" src="etkim.png" alt="ETKİM"><div><b id="hAd">Genç Tekno Girişimcilik Kampı</b><span class="evName">Demo Day</span></div></div>
   <div class="tools">
     <span id="status">Bağlanıyor…</span>
     <a class="ghost" href="./">← Sıralama</a>
@@ -110,7 +110,7 @@
   </div>
 </header>
 
-<div class="title"><h1 id="h1">🏆 Demo Day Sonuçları</h1><p id="sub">İlk üç sırayı açıklıyoruz</p></div>
+<div class="title"><h1 id="h1">🏆 <span class="evName">Demo Day</span> Sonuçları</h1><p id="sub">İlk üç sırayı açıklıyoruz</p></div>
 
 <section class="stage">
   <div class="podium" id="podium"></div>
@@ -189,7 +189,7 @@ async function reveal() {
 
   const col = $('#col' + r), card = $('#card' + r);
   $('#back' + r).innerHTML = it
-    ? `<div class="m">${MEDAL[r]}</div><div class="g">${it.g}</div><div class="t">${it.team}</div><div class="s"><span id="sc${r}">0,0</span><small>/ 100</small></div>`
+    ? `<div class="m">${MEDAL[r]}</div><div class="g">${it.g}</div><div class="t">${it.team}</div><div class="s"><span id="sc${r}">0,0</span><small>/ ${S.maxTotal}</small></div>`
     : `<div class="m">${MEDAL[r]}</div><div class="g">—</div><div class="t">Puanlanan grup yok</div>`;
   $('#sub').textContent = r === 1 ? 'Ve birinci…' : `${r}. sırada…`;
 
@@ -215,7 +215,7 @@ async function reveal() {
 async function champion(origin, it) {
   document.body.classList.add('champ');
   $('#h1').textContent = '🏆 Tebrikler!';
-  $('#sub').textContent = it ? `Demo Day birincisi: ${it.g} · ${it.team}` : '';
+  $('#sub').textContent = it ? `${S.event.etkinlik} birincisi: ${it.g} · ${it.team}` : '';
   const gold = ['#fbbf24', '#fde68a', '#ffffff', '#f59e0b', '#22d3ee', '#a78bfa'];
   confetti(260, gold, origin);
   for (let k = 0; k < 6; k++) {
@@ -239,7 +239,7 @@ function reset() {
   if (busy) return;
   frozen = null; next = 3;
   document.body.classList.remove('champ');
-  $('#h1').textContent = '🏆 Demo Day Sonuçları';
+  $('#h1').innerHTML = '🏆 <span class="evName"></span> Sonuçları'; applyBrand();
   $('#sub').textContent = 'İlk üç sırayı açıklıyoruz';
   for (const r of [1, 2, 3]) { $('#card' + r).classList.remove('open'); $('#col' + r).classList.remove('done', 'lit'); }
   setButton(); if (S) updateStatus();
@@ -286,9 +286,22 @@ function step() {
 }
 
 // Canlı durum: açıklama başlayana kadar güncel kalır, sonra ilk üç donar
+function applyBrand() {
+  if (!S) return;
+  const ev = S.event || {};
+  $('#hAd').textContent = ev.ad || '';
+  document.querySelectorAll('.evName').forEach(e => e.textContent = ev.etkinlik || '');
+  document.title = `${ev.etkinlik} Sonuçları · ${[ev.kurum, ev.ad].filter(Boolean).join(' ')}`;
+}
+
 function connect() {
   const es = new EventSource('events');
-  es.onmessage = e => { S = JSON.parse(e.data); updateStatus(); setButton(); };
+  es.onmessage = e => {
+    const d = JSON.parse(e.data);
+    // Yönetim panelinde ayarlar değişti: açıklama başlamadıysa sayfa yenilenir
+    if (S && d.surum !== S.surum && !frozen) return location.reload();
+    S = d; applyBrand(); updateStatus(); setButton();
+  };
   es.onerror = () => { if (!S) $('#status').textContent = 'Bağlantı bekleniyor…'; };
 }
 connect();

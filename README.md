@@ -6,7 +6,7 @@ efektli gösterildiği web uygulaması. Bağımlılık yok: Node.js 22.13+ yeter
 
 ## Çalıştırma
 
-1. `.env.example` dosyasını `.env` olarak kopyalayın, `JURI_SIFRE` değerini yazın.
+1. `.env.example` dosyasını `.env` olarak kopyalayın, `ADMIN_SIFRE` ve `JURI_SIFRE` değerlerini yazın.
 2. `baslat.bat` (ya da `npm start`).
 
 | Adres | Ne |
@@ -14,8 +14,27 @@ efektli gösterildiği web uygulaması. Bağımlılık yok: Node.js 22.13+ yeter
 | `http://localhost:3000/` | Ana ekran: canlı sıralama, giriş gerekmez |
 | `http://localhost:3000/juri` | Jüri paneli (telefona uyumlu): kullanıcı adı isim+soyisim bitişik, küçük harf (ör. `alidemir`) |
 | `http://localhost:3000/sonuc` | Sonuç vitrini: oylama bitince ilk üçü sırayla açıklama ekranı |
+| `http://localhost:3000/yonetim` | Yönetim paneli: `ADMIN_SIFRE` ile girilir |
+
+## Yönetim paneli
+
+Etkinliğin bütün ayarları `/yonetim` sayfasından yönetilir; kodu düzenlemek ya da sunucuyu
+yeniden başlatmak gerekmez. Ayarlar `juri.db` içinde saklanır, açık ekranlar değişince kendini yeniler.
+
+- **Genel Bakış:** oy ilerlemesi, oylamayı açma/kapatma, sahnedeki ili elle seçme, jüri durumu
+- **Oylar:** jüri × il tablosu; herhangi bir oyu görüntüleme, düzeltme, silme ya da jüri adına girme
+- **İller & Takımlar:** ekleme, çıkarma, yeniden adlandırma, sunum sırasını değiştirme (yeniden adlandırmada oylar korunur)
+- **Jüriler:** ekleme, çıkarma, ad / kullanıcı adı değiştirme, jüriye özel şifre, oturumu kapatma
+- **Kriterler:** ad, kısa ad, azami puan; oy varken kriter sayısı değişmez, azami puan verilen puanın altına inmez
+- **Etkinlik & Logolar:** kurum / program / etkinlik adı, tarih, yer; destekçi logosu yükleme, sıralama, silme
+- **Güvenlik & Veri:** ortak jüri şifresi, yönetici şifresi, tüm oturumları kapatma, yedek indirme / geri yükleme, oyları sıfırlama
+
+Panelden belirlenen şifreler `.env` değerlerinin yerine geçer (veritabanında yalnızca scrypt özeti tutulur).
+Panelden yüklenen logolar `DATA_DIR/logolar/` klasörüne yazılır.
 
 ## Puanlama
+
+Varsayılan kriterler (yönetim panelinden değiştirilebilir):
 
 | Kriter | Puan |
 |---|---|
@@ -33,13 +52,11 @@ Her jüri kendi puanını istediği zaman değiştirebilir ya da silebilir.
 
 ## Ana ekran
 
-- **Şimdi sahnede:** sunum sırası `server.js` içindeki `GROUPS` listesidir. Beş jürinin
+- **Şimdi sahnede:** sunum sırası yönetim panelindeki il listesidir. Beş jürinin
   hepsinin oy vermediği ilk il sahnede sayılır; beşi de oy verince ekran sıradaki ile geçer.
-  Kartta kaç jürinin oy verdiği ve kimlerin beklendiği görünür.
+  Kartta kaç jürinin oy verdiği ve kimlerin beklendiği görünür. Panelden il seçilirse o il sahnede gösterilir.
 - **Sunum bekliyor:** henüz hiç oy almamış iller sıralamada soluk görünür.
-- **Alt bant:** `.env` içindeki `ETKINLIK_TARIH` ve `ETKINLIK_YER` ile saat gösterilir.
-  Destekçi logoları için PNG/JPG/SVG dosyalarını `public/logolar/` klasörüne koyun
-  (dosya adına göre sıralanır, sunucuyu yeniden başlatmak gerekmez; ekranı yenileyin).
+- **Alt bant:** panelde girilen etkinlik bilgisi, saat ve destekçi logoları gösterilir.
 
 ## Sonuç vitrini
 
@@ -58,8 +75,9 @@ o anki puanlarla bir Excel dosyası indirir; etkinlik boyunca istenildiği kadar
 - **Jüri Ayrıntısı** sayfası: sunum sırasına göre her il için beş jürinin kriter kriter puanları,
   oy zamanı ve kriter ortalamaları
 
-Takım isimleri `server.js` içindeki `TEAMS` listesindedir; ekranlarda il adının yanında görünür.
+Takım isimleri ekranlarda il adının yanında görünür.
 
 ## Veri
 
-Oylar `juri.db` (SQLite) dosyasında. Sıfırlamak için sunucuyu durdurup dosyayı silin.
+Oylar ve ayarlar `juri.db` (SQLite) dosyasında. Oyları panelden sıfırlayabilirsiniz; dosyayı silmek
+ayarları da `server.js` içindeki varsayılanlara döndürür.

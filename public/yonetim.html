@@ -1,0 +1,797 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Yönetim Paneli · ETKİM Demo Day</title>
+<style>
+  :root {
+    --bg: #0f172a; --panel: #111c33; --panel2: #16233f; --line: #24345a;
+    --text: #e8eefc; --muted: #8fa3c7; --accent: #22d3ee; --accent2: #a78bfa;
+    --ok: #34d399; --warn: #fbbf24; --err: #f87171;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: "Segoe UI", system-ui, sans-serif; background: radial-gradient(circle at 20% 0%, #1e2b55 0%, var(--bg) 55%) fixed; color: var(--text); min-height: 100vh; }
+  button, select, input { font: inherit; }
+  a { color: var(--accent); }
+  .hidden { display: none !important; }
+
+  /* Giriş */
+  #login { min-height: 100vh; display: grid; place-items: center; padding: 16px; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 28px; width: 100%; max-width: 380px; box-shadow: 0 20px 60px rgba(0,0,0,.4); }
+  .card h1 { margin: 0 0 4px; font-size: 22px; }
+  .card > p { margin: 0 0 20px; color: var(--muted); font-size: 14px; }
+  .card .logo { display: block; height: 44px; margin: 0 auto 14px; }
+  label { display: block; font-size: 13px; color: var(--muted); margin: 12px 0 6px; }
+  input, select { width: 100%; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--panel2); color: var(--text); outline: none; }
+  input:focus, select:focus { border-color: var(--accent); }
+  input:disabled { opacity: .5; }
+  .btn { border: 0; border-radius: 10px; padding: 10px 16px; font-weight: 600; cursor: pointer; background: linear-gradient(135deg, var(--accent), var(--accent2)); color: #0b1020; white-space: nowrap; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; }
+  .btn:disabled { opacity: .4; cursor: not-allowed; }
+  .btn.ghost { background: transparent; color: var(--text); border: 1px solid var(--line); }
+  .btn.ghost:hover { border-color: var(--accent); }
+  .btn.danger { background: transparent; color: var(--err); border: 1px solid rgba(248,113,113,.5); }
+  .btn.danger:hover { background: rgba(248,113,113,.12); }
+  .btn.danger.solid { background: var(--err); color: #1a0505; }
+  .btn.sm { padding: 6px 10px; font-size: 13px; border-radius: 8px; }
+  .err { color: var(--err); font-size: 14px; min-height: 20px; margin-top: 10px; }
+
+  /* Çerçeve */
+  header { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 24px; border-bottom: 1px solid var(--line); background: rgba(15,23,42,.8); position: sticky; top: 0; z-index: 10; backdrop-filter: blur(6px); }
+  header h1 { margin: 0; font-size: 18px; }
+  header h1 small { display: block; font-size: 12px; color: var(--muted); font-weight: 400; }
+  .brand { display: flex; align-items: center; gap: 12px; min-width: 0; }
+  .logo { height: 36px; background: #fff; border-radius: 8px; padding: 4px 8px; }
+  .hright { display: flex; align-items: center; gap: 10px; }
+  .live { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--ok); }
+  .live i { width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+  .live.off { color: var(--muted); }
+  .layout { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 20px; padding: 20px 24px; max-width: 1400px; margin: 0 auto; }
+  nav { display: flex; flex-direction: column; gap: 4px; position: sticky; top: 84px; align-self: start; }
+  nav button { text-align: left; background: transparent; border: 1px solid transparent; color: var(--muted); padding: 10px 12px; border-radius: 10px; cursor: pointer; display: flex; gap: 10px; align-items: center; }
+  nav button:hover { color: var(--text); background: var(--panel); }
+  nav button.on { color: var(--text); background: var(--panel); border-color: var(--line); box-shadow: inset 3px 0 0 var(--accent); }
+  nav button .dot { margin-left: auto; width: 8px; height: 8px; border-radius: 50%; background: var(--warn); display: none; }
+  nav button.dirty .dot { display: inline-block; }
+  section.tab { display: none; }
+  section.tab.on { display: block; }
+  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 18px; margin-bottom: 18px; }
+  .panel > h2 { margin: 0 0 4px; font-size: 16px; }
+  .panel > .sub { margin: 0 0 14px; color: var(--muted); font-size: 13px; line-height: 1.5; }
+  .row-actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-top: 14px; }
+  .row-actions .sp { flex: 1; }
+  .note { font-size: 13px; color: var(--warn); background: rgba(251,191,36,.08); border: 1px solid rgba(251,191,36,.3); border-radius: 10px; padding: 10px 12px; margin: 0 0 12px; }
+
+  /* Genel bakış */
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 14px; margin-bottom: 18px; }
+  .stat { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 16px; }
+  .stat .k { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
+  .stat .v { font-size: 28px; font-weight: 800; margin-top: 4px; }
+  .stat .v small { font-size: 15px; color: var(--muted); font-weight: 500; }
+  .bar { height: 6px; background: var(--panel2); border-radius: 4px; margin-top: 10px; overflow: hidden; }
+  .bar i { display: block; height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent2)); }
+  .switch { display: flex; align-items: center; gap: 10px; margin-top: 8px; cursor: pointer; user-select: none; }
+  .switch input { display: none; }
+  .switch .tr { width: 46px; height: 26px; border-radius: 13px; background: var(--line); position: relative; transition: background .2s; flex: none; }
+  .switch .tr::after { content: ""; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 50%; background: #fff; transition: transform .2s; }
+  .switch input:checked + .tr { background: var(--ok); }
+  .switch input:checked + .tr::after { transform: translateX(20px); }
+  .switch b { font-size: 18px; }
+  .links { display: flex; flex-wrap: wrap; gap: 10px; }
+
+  /* Tablolar */
+  .tw { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th, td { padding: 8px 10px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: middle; }
+  th { font-size: 12px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: .03em; }
+  td.c, th.c { text-align: center; }
+  td.r, th.r { text-align: right; }
+  .muted { color: var(--muted); }
+  .badge { display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); white-space: nowrap; }
+  .badge.ok { color: var(--ok); border-color: rgba(52,211,153,.4); }
+  .badge.warn { color: var(--warn); border-color: rgba(251,191,36,.4); }
+  .matrix td.cell { padding: 3px; text-align: center; }
+  .matrix .cell button { width: 100%; min-width: 52px; padding: 7px 4px; border-radius: 8px; border: 1px solid var(--line); background: var(--panel2); color: var(--text); cursor: pointer; font-weight: 700; }
+  .matrix .cell button.empty { background: transparent; color: var(--muted); font-weight: 400; border-style: dashed; }
+  .matrix .cell button:hover { border-color: var(--accent); }
+  .matrix th.j { text-align: center; min-width: 70px; }
+  .matrix td.avg { font-weight: 800; color: var(--accent); text-align: right; }
+  .matrix tr.stage td:first-child { box-shadow: inset 3px 0 0 var(--ok); }
+
+  /* Liste düzenleyici */
+  .ed td { padding: 5px 6px; }
+  .ed td.n { color: var(--muted); width: 36px; text-align: center; }
+  .ed td.acts { white-space: nowrap; width: 1%; }
+  .ed input { padding: 8px 10px; }
+  .ed input.num { width: 90px; }
+  .ib { border: 1px solid var(--line); background: var(--panel2); color: var(--text); width: 32px; height: 32px; border-radius: 8px; cursor: pointer; }
+  .ib:hover:not(:disabled) { border-color: var(--accent); }
+  .ib.x:hover:not(:disabled) { border-color: var(--err); color: var(--err); }
+  .ib:disabled { opacity: .3; cursor: not-allowed; }
+  .ed tr.new td { background: rgba(34,211,238,.05); }
+  .total-note { font-size: 14px; color: var(--muted); }
+  .total-note b { color: var(--text); font-size: 18px; }
+
+  .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 0 16px; }
+
+  /* Logolar */
+  .logos { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 12px; }
+  .lg { border: 1px solid var(--line); border-radius: 12px; overflow: hidden; background: var(--panel2); }
+  .lg .im { height: 100px; background: #fff; display: grid; place-items: center; padding: 10px; }
+  .lg .im img { max-width: 100%; max-height: 80px; }
+  .lg .meta { padding: 8px; display: flex; gap: 6px; align-items: center; }
+  .lg .meta span { flex: 1; font-size: 12px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .drop { border: 2px dashed var(--line); border-radius: 12px; padding: 22px; text-align: center; color: var(--muted); cursor: pointer; margin-bottom: 14px; }
+  .drop:hover, .drop.over { border-color: var(--accent); color: var(--text); }
+
+  /* Modal + bildirim */
+  .modal { position: fixed; inset: 0; background: rgba(5,10,25,.7); display: grid; place-items: center; z-index: 50; padding: 16px; backdrop-filter: blur(3px); }
+  .modal .card { max-width: 520px; max-height: calc(100vh - 32px); overflow: auto; }
+  .modal .card h1 { font-size: 19px; }
+  .modal .body { font-size: 14px; color: var(--muted); line-height: 1.55; }
+  .modal .body ul { margin: 8px 0; padding-left: 20px; color: var(--text); }
+  .modal .actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 18px; flex-wrap: wrap; }
+  .vrow { display: grid; grid-template-columns: 1fr 90px; gap: 10px; align-items: center; padding: 6px 0; border-bottom: 1px solid var(--line); }
+  .vrow span { color: var(--text); font-size: 14px; }
+  .vrow span small { color: var(--muted); }
+  .vtotal { text-align: right; margin-top: 10px; font-size: 15px; color: var(--text); }
+  .toasts { position: fixed; right: 16px; bottom: 16px; display: flex; flex-direction: column; gap: 8px; z-index: 60; }
+  .toast { background: var(--panel2); border: 1px solid var(--line); border-left: 4px solid var(--ok); padding: 10px 14px; border-radius: 10px; font-size: 14px; box-shadow: 0 10px 30px rgba(0,0,0,.4); max-width: 360px; animation: tin .25s ease; }
+  .toast.e { border-left-color: var(--err); }
+  @keyframes tin { from { transform: translateY(10px); opacity: 0; } }
+
+  @media (max-width: 860px) {
+    header { padding: 10px 16px; }
+    header h1 small { display: none; }
+    .layout { grid-template-columns: 1fr; padding: 12px 16px; gap: 12px; }
+    nav { flex-direction: row; overflow-x: auto; position: sticky; top: 61px; z-index: 5; background: var(--bg); padding: 6px 0; margin: 0 -16px; padding: 6px 16px; }
+    nav button { white-space: nowrap; flex: none; }
+    nav button.on { box-shadow: inset 0 -3px 0 var(--accent); }
+    .panel { padding: 14px; }
+    .hright .lnk { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<section id="login">
+  <form class="card" id="loginForm" autocomplete="off">
+    <img class="logo" src="etkim.png" alt="ETKİM">
+    <h1>Yönetim Paneli</h1>
+    <p>Etkinliğin tüm ayarları buradan yönetilir.</p>
+    <label for="pw">Yönetici şifresi</label>
+    <input id="pw" type="password" required autofocus>
+    <div class="err" id="loginErr"></div>
+    <button class="btn" style="width:100%;justify-content:center;margin-top:6px">Giriş Yap</button>
+  </form>
+</section>
+
+<section id="app" class="hidden">
+  <header>
+    <div class="brand"><img class="logo" src="etkim.png" alt="ETKİM"><h1>Yönetim Paneli<small id="evTitle"></small></h1></div>
+    <div class="hright">
+      <span class="live off" id="live"><i></i><span>Canlı</span></span>
+      <a class="btn ghost sm lnk" href="./" target="_blank">Ana ekran ↗</a>
+      <button class="btn ghost sm" id="logout">Çıkış</button>
+    </div>
+  </header>
+  <div class="layout">
+    <nav id="nav">
+      <button data-tab="genel">📊 Genel Bakış</button>
+      <button data-tab="oylar">🗳 Oylar</button>
+      <button data-tab="gruplar">📍 İller & Takımlar<span class="dot"></span></button>
+      <button data-tab="juriler">👥 Jüriler<span class="dot"></span></button>
+      <button data-tab="kriterler">📋 Kriterler<span class="dot"></span></button>
+      <button data-tab="etkinlik">🎪 Etkinlik & Logolar<span class="dot"></span></button>
+      <button data-tab="guvenlik">🔐 Güvenlik & Veri</button>
+    </nav>
+    <main>
+      <!-- GENEL -->
+      <section class="tab" id="t-genel">
+        <div class="stats">
+          <div class="stat"><div class="k">Kullanılan oy</div><div class="v" id="sVotes"></div><div class="bar"><i id="sBar"></i></div></div>
+          <div class="stat"><div class="k">Oylama</div>
+            <label class="switch"><input type="checkbox" id="sOpen"><span class="tr"></span><b id="sOpenTxt"></b></label></div>
+          <div class="stat"><div class="k">Bağlı ekran</div><div class="v" id="sClients"></div></div>
+          <div class="stat"><div class="k">Puanlanan il</div><div class="v" id="sGroups"></div></div>
+        </div>
+        <div class="panel">
+          <h2>🎤 Şimdi sahnede</h2>
+          <p class="sub">Otomatikte ana ekran, tüm jürilerin henüz oylamadığı ilk ili sahnede gösterir. Sunum sırası değişirse buradan elle seçin.</p>
+          <select id="stageSel"></select>
+        </div>
+        <div class="panel">
+          <h2>Jüri durumu</h2>
+          <p class="sub">Kim kaç ile puan verdi, kimin açık oturumu var.</p>
+          <div class="tw"><table id="juryStatus"></table></div>
+        </div>
+        <div class="panel">
+          <h2>Ekranlar</h2>
+          <p class="sub">Etkinlik sırasında açılacak sayfalar.</p>
+          <div class="links">
+            <a class="btn ghost" href="./" target="_blank">📺 Ana ekran</a>
+            <a class="btn ghost" href="sonuc" target="_blank">🏆 Sonuç vitrini</a>
+            <a class="btn ghost" href="juri" target="_blank">🔑 Jüri girişi</a>
+            <a class="btn ghost" href="puanlar.xlsx" download>⬇ XLSX indir</a>
+          </div>
+        </div>
+      </section>
+
+      <!-- OYLAR -->
+      <section class="tab" id="t-oylar">
+        <div class="panel">
+          <h2>Oylar</h2>
+          <p class="sub">Bir hücreye tıklayarak o jürinin puanını görüntüleyin, düzeltin ya da silin. Eksik oyu jüri adına da girebilirsiniz. Değişiklikler ana ekrana anında yansır.</p>
+          <div class="tw"><table class="matrix" id="matrix"></table></div>
+        </div>
+      </section>
+
+      <!-- GRUPLAR -->
+      <section class="tab" id="t-gruplar">
+        <div class="panel">
+          <h2>İller & Takımlar</h2>
+          <p class="sub">Liste sırası sunum sırasıdır. İl adını değiştirirseniz oyları korunur; listeden çıkardığınız ilin oyları silinir.</p>
+          <div class="tw"><table class="ed" id="edGroups"></table></div>
+          <div class="row-actions">
+            <button class="btn ghost" id="addGroup">＋ İl ekle</button>
+            <span class="sp"></span>
+            <button class="btn ghost" data-cancel="gruplar">Vazgeç</button>
+            <button class="btn" id="saveGroups">Kaydet</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- JÜRİLER -->
+      <section class="tab" id="t-juriler">
+        <div class="panel">
+          <h2>Jüriler</h2>
+          <p class="sub">Kullanıcı adı boş bırakılırsa isimden üretilir (unvanlar atılır, ör. <b>alidemir</b>). Jüriler giriş ekranında kullanıcı adını Türkçe karakterli ya da boşluklu da yazabilir. Listeden çıkarılan jürinin oyları silinir.</p>
+          <div class="tw"><table class="ed" id="edJuries"></table></div>
+          <div class="row-actions">
+            <button class="btn ghost" id="addJury">＋ Jüri ekle</button>
+            <span class="sp"></span>
+            <button class="btn ghost" data-cancel="juriler">Vazgeç</button>
+            <button class="btn" id="saveJuries">Kaydet</button>
+          </div>
+        </div>
+        <div class="panel">
+          <h2>Giriş & şifre</h2>
+          <p class="sub">Her jüri ortak jüri şifresiyle girer. Bir jüriye özel şifre verirseniz o jüri yalnızca kendi şifresiyle girebilir. Şifre değişince jürinin açık oturumu kapanır.</p>
+          <div class="tw"><table id="juryAccess"></table></div>
+        </div>
+      </section>
+
+      <!-- KRİTERLER -->
+      <section class="tab" id="t-kriterler">
+        <div class="panel">
+          <h2>Değerlendirme kriterleri</h2>
+          <p class="sub">Kısa ad, ana ekrandaki ayrıntı tablosunun sütun başlığıdır. Jürinin bir ile verebileceği en yüksek puan, azami puanların toplamıdır.</p>
+          <div class="note hidden" id="critLock"></div>
+          <div class="tw"><table class="ed" id="edCriteria"></table></div>
+          <div class="row-actions">
+            <button class="btn ghost" id="addCrit">＋ Kriter ekle</button>
+            <span class="total-note">Toplam: <b id="critTotal"></b> puan</span>
+            <span class="sp"></span>
+            <button class="btn ghost" data-cancel="kriterler">Vazgeç</button>
+            <button class="btn" id="saveCriteria">Kaydet</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ETKİNLİK -->
+      <section class="tab" id="t-etkinlik">
+        <div class="panel">
+          <h2>Etkinlik bilgisi</h2>
+          <p class="sub">Ana ekranın başlığında, alt bandında, jüri panelinde ve sonuç vitrininde görünür.</p>
+          <form id="evForm" class="form-grid">
+            <div><label for="evKurum">Kurum</label><input id="evKurum" name="kurum" maxlength="40" placeholder="ETKİM"></div>
+            <div><label for="evAd">Kamp / program adı</label><input id="evAd" name="ad" maxlength="100"></div>
+            <div><label for="evEtkinlik">Etkinlik adı</label><input id="evEtkinlik" name="etkinlik" maxlength="60" placeholder="Demo Day"></div>
+            <div><label for="evTarih">Tarih</label><input id="evTarih" name="tarih" maxlength="60" placeholder="ör. 12 Ekim 2026"></div>
+            <div><label for="evYer">Yer</label><input id="evYer" name="yer" maxlength="100"></div>
+          </form>
+          <div class="row-actions"><span class="sp"></span>
+            <button class="btn ghost" data-cancel="etkinlik">Vazgeç</button>
+            <button class="btn" id="saveEvent">Kaydet</button>
+          </div>
+        </div>
+        <div class="panel">
+          <h2>Destekçi logoları</h2>
+          <p class="sub">Ana ekranın alt bandında bu sırayla görünür. PNG, JPG, SVG ya da WEBP; en fazla 3 MB. Şeffaf arka planlı PNG/SVG en iyi sonucu verir.</p>
+          <div class="drop" id="drop">📁 Logo dosyalarını buraya sürükleyin ya da <u>seçmek için tıklayın</u>
+            <input type="file" id="logoFile" accept=".png,.jpg,.jpeg,.svg,.webp" multiple hidden></div>
+          <div class="logos" id="logos"></div>
+        </div>
+      </section>
+
+      <!-- GÜVENLİK -->
+      <section class="tab" id="t-guvenlik">
+        <div class="panel">
+          <h2>Ortak jüri şifresi</h2>
+          <p class="sub" id="pwOrtakInfo"></p>
+          <form id="pwOrtak" class="form-grid" autocomplete="off">
+            <div><label for="pwO1">Yeni şifre</label><input id="pwO1" type="password" minlength="4" required autocomplete="new-password"></div>
+            <div><label for="pwO2">Yeni şifre (tekrar)</label><input id="pwO2" type="password" minlength="4" required autocomplete="new-password"></div>
+          </form>
+          <div class="row-actions"><span class="sp"></span><button class="btn" form="pwOrtak">Ortak şifreyi değiştir</button></div>
+        </div>
+        <div class="panel">
+          <h2>Yönetici şifresi</h2>
+          <p class="sub" id="pwAdminInfo"></p>
+          <form id="pwAdmin" class="form-grid" autocomplete="off">
+            <div><label for="pwA1">Yeni şifre</label><input id="pwA1" type="password" minlength="6" required autocomplete="new-password"></div>
+            <div><label for="pwA2">Yeni şifre (tekrar)</label><input id="pwA2" type="password" minlength="6" required autocomplete="new-password"></div>
+          </form>
+          <div class="row-actions"><span class="sp"></span><button class="btn" form="pwAdmin">Yönetici şifresini değiştir</button></div>
+        </div>
+        <div class="panel">
+          <h2>Oturumlar</h2>
+          <p class="sub">Kaybolan bir telefonda ya da ortak bir bilgisayarda açık kalmış jüri oturumlarını kapatır. Jüriler yeniden giriş yapar.</p>
+          <button class="btn danger" id="killAll">Tüm jüri oturumlarını kapat</button>
+        </div>
+        <div class="panel">
+          <h2>Yedek</h2>
+          <p class="sub">Yedek dosyası tüm ayarları (iller, jüriler, kriterler, etkinlik bilgisi, logo sırası) ve oyları içerir; şifreler ve logo dosyaları yedeğe girmez. Geri yükleme mevcut ayarların ve oyların yerine geçer.</p>
+          <div class="links">
+            <button class="btn ghost" id="backup">⬇ Yedek indir</button>
+            <button class="btn ghost" id="restoreBtn">⬆ Yedekten geri yükle</button>
+            <input type="file" id="restoreFile" accept=".json,application/json" hidden>
+          </div>
+        </div>
+        <div class="panel" style="border-color:rgba(248,113,113,.4)">
+          <h2 style="color:var(--err)">Tüm oyları sıfırla</h2>
+          <p class="sub">Bütün jürilerin bütün puanları kalıcı olarak silinir. Ayarlar korunur. Öncesinde yedek ya da XLSX indirmeniz önerilir.</p>
+          <button class="btn danger solid" id="reset">Oyları sıfırla…</button>
+        </div>
+      </section>
+    </main>
+  </div>
+</section>
+
+<div class="modal hidden" id="modal">
+  <div class="card">
+    <h1 id="mTitle"></h1>
+    <div class="body" id="mBody"></div>
+    <div class="err" id="mErr"></div>
+    <div class="actions" id="mActs"></div>
+  </div>
+</div>
+<div class="toasts" id="toasts"></div>
+
+<script>
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const store = {
+  get() { try { return localStorage.getItem('yonetimToken'); } catch { return null; } },
+  set(t) { try { localStorage.setItem('yonetimToken', t); } catch {} },
+  clear() { try { localStorage.removeItem('yonetimToken'); } catch {} }
+};
+let token = store.get();
+let A = null;                 // sunucudaki güncel durum
+// Düzenlenmekte olan taslaklar; null = kaydedilmemiş değişiklik yok, ekran sunucudan gelenle güncellenir
+const drafts = { gruplar: null, juriler: null, kriterler: null, etkinlik: null };
+const shortName = n => n.replace(/^(Prof\.|Doç\.|Dr\.|Öğr\. ?Gör\.|Arş\. ?Gör\.|\s)+/g, '');
+
+function toast(msg, isErr) {
+  const t = document.createElement('div');
+  t.className = 'toast' + (isErr ? ' e' : '');
+  t.textContent = msg;
+  $('#toasts').appendChild(t);
+  setTimeout(() => t.remove(), isErr ? 6000 : 3000);
+}
+
+async function api(path, opts = {}) {
+  const headers = { Authorization: 'Bearer ' + token, ...(opts.headers || {}) };
+  let body = opts.body;
+  if (body !== undefined && !(body instanceof Blob) && typeof body !== 'string') { body = JSON.stringify(body); headers['Content-Type'] = 'application/json'; }
+  const r = await fetch(path, { ...opts, headers, body });
+  const data = await r.json().catch(() => ({}));
+  if (r.status === 401 && path !== 'api/admin/login') { logout(); throw new Error(data.error || 'Oturum geçersiz'); }
+  if (!r.ok) throw new Error(data.error || 'Hata');
+  return data;
+}
+// Sunucuya değişiklik gönderir, yeni durumu uygular, bildirim gösterir
+async function act(path, opts, okMsg) {
+  try {
+    const d = await api(path, opts);
+    if (d.groups) setState(d);
+    if (okMsg) toast(okMsg);
+    return d;
+  } catch (e) { toast(e.message, true); throw e; }
+}
+
+// ---- Giriş ----
+$('#loginForm').onsubmit = async e => {
+  e.preventDefault();
+  $('#loginErr').textContent = '';
+  try {
+    const r = await api('api/admin/login', { method: 'POST', body: { password: $('#pw').value } });
+    token = r.token; store.set(token); $('#pw').value = '';
+    await start();
+  } catch (err) { $('#loginErr').textContent = err.message; }
+};
+function logout() {
+  token = null; store.clear();
+  $('#app').classList.add('hidden'); $('#login').classList.remove('hidden');
+}
+$('#logout').onclick = () => { api('api/admin/logout', { method: 'POST' }).catch(() => {}); logout(); };
+
+async function start() {
+  setState(await api('api/admin/state'));
+  $('#login').classList.add('hidden'); $('#app').classList.remove('hidden');
+  showTab((location.hash || '#genel').slice(1));
+  connect();
+}
+
+// ---- Canlı güncelleme: oy gelince durum yeniden çekilir ----
+let es = null, refetch = null;
+function connect() {
+  if (es) return;
+  es = new EventSource('events');
+  es.onopen = () => $('#live').classList.remove('off');
+  es.onerror = () => $('#live').classList.add('off');
+  es.onmessage = () => {
+    clearTimeout(refetch);
+    refetch = setTimeout(() => token && api('api/admin/state').then(setState).catch(() => {}), 250);
+  };
+}
+
+// ---- Sekmeler ----
+function showTab(t) {
+  if (!$('#t-' + t)) t = 'genel';
+  document.querySelectorAll('section.tab').forEach(s => s.classList.toggle('on', s.id === 't-' + t));
+  document.querySelectorAll('#nav button').forEach(b => b.classList.toggle('on', b.dataset.tab === t));
+  history.replaceState(null, '', '#' + t);
+}
+$('#nav').onclick = e => { const b = e.target.closest('button'); if (b) showTab(b.dataset.tab); };
+function markDirty() {
+  document.querySelectorAll('#nav button').forEach(b => b.classList.toggle('dirty', !!drafts[b.dataset.tab]));
+}
+addEventListener('beforeunload', e => { if (Object.values(drafts).some(Boolean)) { e.preventDefault(); e.returnValue = ''; } });
+document.querySelectorAll('[data-cancel]').forEach(b => b.onclick = () => { drafts[b.dataset.cancel] = null; renderAll(); });
+
+// ---- Modal ----
+// buttons: [{ text, cls, value }] ; onOk(value) false dönerse / hata atarsa modal açık kalır
+function modal(title, html, buttons, onOk) {
+  return new Promise(resolve => {
+    $('#mTitle').textContent = title;
+    $('#mBody').innerHTML = html;
+    $('#mErr').textContent = '';
+    $('#mActs').innerHTML = buttons.map((b, i) => `<button class="btn ${b.cls || ''}" data-i="${i}">${esc(b.text)}</button>`).join('');
+    $('#modal').classList.remove('hidden');
+    const close = v => { $('#modal').classList.add('hidden'); $('#mActs').onclick = null; resolve(v); };
+    $('#mActs').onclick = async e => {
+      const btn = e.target.closest('button'); if (!btn) return;
+      const b = buttons[btn.dataset.i];
+      if (b.value === undefined) return close(undefined);
+      if (onOk) {
+        btn.disabled = true;
+        try { if ((await onOk(b.value)) === false) return; }
+        catch (err) { $('#mErr').textContent = err.message; return; }
+        finally { btn.disabled = false; }
+      }
+      close(b.value);
+    };
+    const first = $('#mBody input, #mBody select'); if (first) setTimeout(() => first.focus(), 30);
+  });
+}
+const confirmBox = (title, html, okText = 'Onayla', danger = false) =>
+  modal(title, html, [{ text: 'Vazgeç', cls: 'ghost' }, { text: okText, cls: danger ? 'danger solid' : '', value: true }]);
+$('#modal').onclick = e => { if (e.target.id === 'modal') $('#mActs [data-i="0"]').click(); };
+addEventListener('keydown', e => { if (e.key === 'Escape' && !$('#modal').classList.contains('hidden')) $('#mActs [data-i="0"]').click(); });
+
+// ---- Durum ve çizim ----
+const voteOf = (j, g) => A.votes[j] && A.votes[j][g];
+const votesOfGroup = g => A.juries.filter(j => voteOf(j.id, g)).length;
+const votesOfJury = j => Object.keys(A.votes[j] || {}).length;
+const label = g => A.teams[g] ? `${g} · ${A.teams[g]}` : g;
+
+// Sunucudan yeni durum gelince taslağı olan düzenleyiciler yeniden çizilmez (yazarken odak kaybolmasın)
+function setState(d) { A = d; renderAll(true); }
+function renderAll(fromServer) {
+  if (!A) return;
+  const keep = k => fromServer && drafts[k];
+  $('#evTitle').textContent = [A.event.kurum, A.event.ad, A.event.etkinlik].filter(Boolean).join(' · ');
+  renderGenel(); renderMatrix(); renderAccess(); renderLogos(); renderSecurity();
+  if (!keep('gruplar')) renderGroups();
+  if (!keep('juriler')) renderJuries();
+  if (!keep('kriterler')) renderCriteria();
+  if (!keep('etkinlik')) renderEvent();
+  markDirty();
+}
+
+function currentStage() {
+  if (A.sahne) return A.sahne;
+  return A.groups.find(g => votesOfGroup(g) < A.juries.length) || null;
+}
+
+function renderGenel() {
+  const J = A.juries.length, total = A.groups.length * J, n = A.oySayisi;
+  $('#sVotes').innerHTML = `${n}<small> / ${total}</small>`;
+  $('#sBar').style.width = total ? (Math.min(n, total) / total * 100) + '%' : '0';
+  $('#sOpen').checked = A.oylamaAcik;
+  $('#sOpenTxt').textContent = A.oylamaAcik ? 'Açık' : 'Kapalı';
+  $('#sOpenTxt').style.color = A.oylamaAcik ? 'var(--ok)' : 'var(--err)';
+  $('#sClients').textContent = A.istemci;
+  const full = A.groups.filter(g => votesOfGroup(g) === J).length;
+  $('#sGroups').innerHTML = `${full}<small> / ${A.groups.length} tamam</small>`;
+
+  const auto = A.groups.find(g => votesOfGroup(g) < J);
+  $('#stageSel').innerHTML = `<option value="">Otomatik${auto ? ` (şu an: ${esc(auto)})` : ' (tüm sunumlar bitti)'}</option>` +
+    A.groups.map((g, i) => `<option value="${esc(g)}">${i + 1}. ${esc(label(g))} — ${votesOfGroup(g)}/${J} oy</option>`).join('');
+  $('#stageSel').value = A.sahne || '';
+
+  $('#juryStatus').innerHTML = `<thead><tr><th>Jüri</th><th>Kullanıcı adı</th><th class="r">Puanladığı</th><th>Oturum</th></tr></thead><tbody>` +
+    A.juries.map(j => {
+      const c = votesOfJury(j.id);
+      return `<tr><td>${esc(j.name)}</td><td class="muted">${esc(j.id)}</td>
+        <td class="r"><b>${c}</b> <span class="muted">/ ${A.groups.length}</span></td>
+        <td>${j.oturum ? `<span class="badge ok">● ${j.oturum} cihazda açık</span>` : '<span class="badge">kapalı</span>'}</td></tr>`;
+    }).join('') + '</tbody>';
+}
+$('#sOpen').onchange = e => act('api/admin/oylama', { method: 'PUT', body: { acik: e.target.checked } }, e.target.checked ? 'Oylama açıldı' : 'Oylama kapatıldı').catch(() => renderGenel());
+$('#stageSel').onchange = e => act('api/admin/sahne', { method: 'PUT', body: { il: e.target.value || null } }, e.target.value ? `Sahnede: ${e.target.value}` : 'Sahne otomatik').catch(() => {});
+
+function renderMatrix() {
+  const stage = currentStage();
+  $('#matrix').innerHTML = `<thead><tr><th>#</th><th>İl · Takım</th>${A.juries.map(j => `<th class="j" title="${esc(j.name)}">${esc(shortName(j.name).split(' ')[0])}</th>`).join('')}<th class="r">Ort.</th></tr></thead><tbody>` +
+    A.groups.map((g, i) => {
+      const done = A.juries.map(j => voteOf(j.id, g)).filter(Boolean);
+      const avg = done.length ? done.reduce((a, v) => a + v.total, 0) / done.length : null;
+      return `<tr class="${g === stage ? 'stage' : ''}"><td class="muted">${i + 1}</td><td>${esc(g)}${A.teams[g] ? ` <span class="muted">· ${esc(A.teams[g])}</span>` : ''}</td>` +
+        A.juries.map(j => {
+          const v = voteOf(j.id, g);
+          return `<td class="cell"><button class="${v ? '' : 'empty'}" data-j="${esc(j.id)}" data-g="${esc(g)}" title="${esc(j.name)} → ${esc(g)}">${v ? v.total : '＋'}</button></td>`;
+        }).join('') +
+        `<td class="avg">${avg === null ? '<span class="muted">–</span>' : avg.toLocaleString('tr-TR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}</td></tr>`;
+    }).join('') + '</tbody>';
+}
+$('#matrix').onclick = e => { const b = e.target.closest('button[data-j]'); if (b) editVote(b.dataset.j, b.dataset.g); };
+
+async function editVote(jid, g) {
+  const jury = A.juries.find(j => j.id === jid), v = voteOf(jid, g);
+  const html = `<p>${v ? `Oy zamanı: ${new Date(v.time).toLocaleString('tr-TR')}` : 'Bu jüri henüz puan vermedi. Jüri adına puan girebilirsiniz.'}</p>
+    <div id="vForm">${A.criteria.map((c, i) => `<div class="vrow"><span>${esc(c.name)} <small>(1–${c.max})</small></span>
+      <input type="number" min="1" max="${c.max}" step="1" value="${v ? v.scores[i] : ''}" data-i="${i}" required></div>`).join('')}</div>
+    <div class="vtotal">Toplam: <b id="vTotal">${v ? v.total : 0}</b> / ${A.maxTotal}</div>`;
+  const buttons = [{ text: 'Vazgeç', cls: 'ghost' }];
+  if (v) buttons.push({ text: '🗑 Oyu sil', cls: 'danger', value: 'del' });
+  buttons.push({ text: v ? 'Güncelle' : 'Kaydet', value: 'save' });
+  setTimeout(() => {
+    $('#vForm').oninput = () => { $('#vTotal').textContent = [...document.querySelectorAll('#vForm input')].reduce((a, x) => a + (parseInt(x.value) || 0), 0); };
+  });
+  let armed = false; // silme iki tıklamayla
+  await modal(`${shortName(jury.name)} → ${label(g)}`, html, buttons, async val => {
+    if (val === 'del') {
+      if (!armed) { armed = true; $('#mActs .danger').textContent = 'Emin misiniz? Tekrar tıklayın'; $('#mActs .danger').classList.add('solid'); return false; }
+      await act(`api/admin/oy?juri=${encodeURIComponent(jid)}&grup=${encodeURIComponent(g)}`, { method: 'DELETE' }, 'Oy silindi');
+      return;
+    }
+    const scores = [...document.querySelectorAll('#vForm input')].map(x => Number(x.value));
+    const bad = A.criteria.findIndex((c, i) => !Number.isInteger(scores[i]) || scores[i] < 1 || scores[i] > c.max);
+    if (bad >= 0) throw new Error(`"${A.criteria[bad].name}" için 1-${A.criteria[bad].max} arası puan girin`);
+    await act('api/admin/oy', { method: 'PUT', body: { juri: jid, grup: g, scores } }, 'Oy kaydedildi');
+  });
+}
+
+// ---- Liste düzenleyiciler (iller, jüriler, kriterler) ----
+// cols: [{ key, ph, cls, max }] ; locked: ekleme/silme/taşıma kapalı
+function listEditor(table, key, rows, cols, opts = {}) {
+  const locked = !!opts.locked;
+  $(table).innerHTML = `<thead><tr><th class="c">#</th>${cols.map(c => `<th>${c.title}</th>`).join('')}<th></th></tr></thead><tbody>` +
+    rows.map((r, i) => `<tr class="${r.eski === null ? 'new' : ''}"><td class="n">${i + 1}</td>` +
+      cols.map(c => `<td><input class="${c.cls || ''}" data-i="${i}" data-k="${c.key}" value="${esc(r[c.key])}" placeholder="${esc(c.ph || '')}" ${c.type ? `type="${c.type}"` : ''} maxlength="${c.max || 120}"></td>`).join('') +
+      `<td class="acts"><button class="ib" data-mv="-1" data-i="${i}" ${i === 0 || locked ? 'disabled' : ''} title="Yukarı">↑</button>
+        <button class="ib" data-mv="1" data-i="${i}" ${i === rows.length - 1 || locked ? 'disabled' : ''} title="Aşağı">↓</button>
+        <button class="ib x" data-del="${i}" ${locked || rows.length < 2 ? 'disabled' : ''} title="Çıkar">✕</button></td></tr>`).join('') + '</tbody>';
+  const draft = () => drafts[key] || (drafts[key] = rows);
+  $(table).oninput = e => {
+    const x = e.target; if (!x.dataset.k) return;
+    const d = draft(); d[x.dataset.i][x.dataset.k] = x.type === 'number' ? Number(x.value) : x.value;
+    markDirty(); opts.onInput && opts.onInput(d);
+  };
+  $(table).onclick = e => {
+    const b = e.target.closest('button'); if (!b || b.disabled) return;
+    const d = draft(), i = +b.dataset.i;
+    if (b.dataset.mv) { const j = i + +b.dataset.mv; [d[i], d[j]] = [d[j], d[i]]; }
+    if (b.dataset.del !== undefined) d.splice(+b.dataset.del, 1);
+    renderAll();
+  };
+}
+function addRow(key, fresh, row) {
+  const d = drafts[key] || (drafts[key] = fresh());
+  d.push(row); renderAll();
+  const inputs = document.querySelectorAll(`#t-${key} tbody tr:last-child input`); if (inputs[0]) inputs[0].focus();
+}
+
+// İller
+const groupRows = () => A.groups.map(g => ({ eski: g, il: g, takim: A.teams[g] || '' }));
+function renderGroups() {
+  listEditor('#edGroups', 'gruplar', drafts.gruplar || groupRows(), [
+    { key: 'il', title: 'İl', ph: 'İl adı', max: 60 },
+    { key: 'takim', title: 'Takım', ph: 'Takım adı', max: 80 }
+  ]);
+}
+$('#addGroup').onclick = () => addRow('gruplar', groupRows, { eski: null, il: '', takim: '' });
+$('#saveGroups').onclick = async () => {
+  const list = drafts.gruplar; if (!list) return toast('Değişiklik yok');
+  const kept = new Set(list.map(r => r.eski).filter(Boolean));
+  const lost = A.groups.filter(g => !kept.has(g) && votesOfGroup(g));
+  if (lost.length && !await confirmBox('Oylar silinecek', `Listeden çıkardığınız şu illerin oyları kalıcı olarak silinecek:<ul>${lost.map(g => `<li>${esc(g)} (${votesOfGroup(g)} oy)</li>`).join('')}</ul>`, 'Sil ve kaydet', true)) return;
+  await act('api/admin/gruplar', { method: 'PUT', body: { list } }, 'İller kaydedildi').then(() => { drafts.gruplar = null; renderAll(); }).catch(() => {});
+};
+
+// Jüriler
+const juryRows = () => A.juries.map(j => ({ eski: j.id, name: j.name, id: j.id }));
+function renderJuries() {
+  listEditor('#edJuries', 'juriler', drafts.juriler || juryRows(), [
+    { key: 'name', title: 'Ad Soyad (unvanla)', ph: 'Prof. Dr. Ad SOYAD', max: 80 },
+    { key: 'id', title: 'Kullanıcı adı', ph: 'boşsa isimden üretilir', max: 40 }
+  ]);
+}
+$('#addJury').onclick = () => addRow('juriler', juryRows, { eski: null, name: '', id: '' });
+$('#saveJuries').onclick = async () => {
+  const list = drafts.juriler; if (!list) return toast('Değişiklik yok');
+  const kept = new Set(list.map(r => r.eski).filter(Boolean));
+  const lost = A.juries.filter(j => !kept.has(j.id) && votesOfJury(j.id));
+  if (lost.length && !await confirmBox('Oylar silinecek', `Listeden çıkardığınız şu jürilerin oyları kalıcı olarak silinecek:<ul>${lost.map(j => `<li>${esc(j.name)} (${votesOfJury(j.id)} oy)</li>`).join('')}</ul>`, 'Sil ve kaydet', true)) return;
+  await act('api/admin/juriler', { method: 'PUT', body: { list } }, 'Jüriler kaydedildi').then(() => { drafts.juriler = null; renderAll(); }).catch(() => {});
+};
+
+function renderAccess() {
+  $('#juryAccess').innerHTML = `<thead><tr><th>Jüri</th><th>Kullanıcı adı</th><th>Şifre</th><th>Oturum</th><th></th></tr></thead><tbody>` +
+    A.juries.map(j => `<tr><td>${esc(j.name)}</td><td class="muted">${esc(j.id)}</td>
+      <td>${j.ozelSifre ? '<span class="badge warn">özel şifre</span>' : '<span class="badge">ortak şifre</span>'}</td>
+      <td>${j.oturum ? `<span class="badge ok">● ${j.oturum} cihaz</span>` : '<span class="muted">—</span>'}</td>
+      <td class="r" style="white-space:nowrap">
+        <button class="btn ghost sm" data-pw="${esc(j.id)}">${j.ozelSifre ? 'Şifreyi değiştir' : 'Özel şifre ver'}</button>
+        ${j.ozelSifre ? `<button class="btn ghost sm" data-unpw="${esc(j.id)}">Ortak şifreye dön</button>` : ''}
+        ${j.oturum ? `<button class="btn danger sm" data-kill="${esc(j.id)}">Oturumu kapat</button>` : ''}</td></tr>`).join('') + '</tbody>';
+}
+$('#juryAccess').onclick = async e => {
+  const b = e.target.closest('button'); if (!b) return;
+  const id = b.dataset.pw || b.dataset.unpw || b.dataset.kill, j = A.juries.find(x => x.id === id);
+  if (b.dataset.pw) {
+    await modal(`${j.name} için şifre`, `<p>Bu jüri bundan sonra yalnızca bu şifreyle girebilir.</p>
+      <label for="jp1">Yeni şifre</label><input id="jp1" type="password" autocomplete="new-password">
+      <label for="jp2">Yeni şifre (tekrar)</label><input id="jp2" type="password" autocomplete="new-password">`,
+      [{ text: 'Vazgeç', cls: 'ghost' }, { text: 'Kaydet', value: true }], async () => {
+        if ($('#jp1').value.length < 4) throw new Error('Şifre en az 4 karakter olmalı');
+        if ($('#jp1').value !== $('#jp2').value) throw new Error('Şifreler aynı değil');
+        await act('api/admin/sifre', { method: 'PUT', body: { tur: 'juri', juri: id, sifre: $('#jp1').value } }, 'Özel şifre kaydedildi');
+      });
+  } else if (b.dataset.unpw) {
+    if (await confirmBox('Ortak şifreye dön', `<b>${esc(j.name)}</b> özel şifresi kaldırılacak ve ortak jüri şifresiyle girecek.`, 'Kaldır'))
+      act('api/admin/sifre', { method: 'PUT', body: { tur: 'juri', juri: id, sifre: '' } }, 'Özel şifre kaldırıldı').catch(() => {});
+  } else if (b.dataset.kill) {
+    act('api/admin/oturum?juri=' + encodeURIComponent(id), { method: 'DELETE' }, `${shortName(j.name)} oturumu kapatıldı`).catch(() => {});
+  }
+};
+
+// Kriterler
+const critRows = () => A.criteria.map(c => ({ eski: c.name, name: c.name, short: c.short, max: c.max }));
+function renderCriteria() {
+  const locked = A.oySayisi > 0, rows = drafts.kriterler || critRows();
+  $('#critLock').classList.toggle('hidden', !locked);
+  $('#critLock').textContent = `Kayıtlı ${A.oySayisi} oy var: kriterlerin adını ve kısa adını değiştirebilir, azami puanı verilmiş puanların altına düşmeyecek şekilde artırabilirsiniz. Kriter eklemek, çıkarmak ya da sırasını değiştirmek için önce oyları sıfırlayın.`;
+  listEditor('#edCriteria', 'kriterler', rows, [
+    { key: 'name', title: 'Kriter', ph: 'Kriter adı', max: 120 },
+    { key: 'short', title: 'Kısa ad', ph: 'ör. Sunum', max: 24 },
+    { key: 'max', title: 'Azami', cls: 'num', type: 'number' }
+  ], { locked, onInput: d => { $('#critTotal').textContent = d.reduce((a, c) => a + (Number(c.max) || 0), 0); } });
+  $('#addCrit').disabled = locked;
+  $('#critTotal').textContent = rows.reduce((a, c) => a + (Number(c.max) || 0), 0);
+}
+$('#addCrit').onclick = () => addRow('kriterler', critRows, { eski: null, name: '', short: '', max: 10 });
+$('#saveCriteria').onclick = () => {
+  const list = drafts.kriterler; if (!list) return toast('Değişiklik yok');
+  act('api/admin/kriterler', { method: 'PUT', body: { list } }, 'Kriterler kaydedildi').then(() => { drafts.kriterler = null; renderAll(); }).catch(() => {});
+};
+
+// Etkinlik
+function renderEvent() {
+  const ev = drafts.etkinlik || A.event;
+  for (const k of ['kurum', 'ad', 'etkinlik', 'tarih', 'yer']) {
+    const el = $('#evForm').elements[k];
+    if (document.activeElement !== el || !drafts.etkinlik) el.value = ev[k] || '';
+  }
+}
+$('#evForm').oninput = () => { drafts.etkinlik = Object.fromEntries(new FormData($('#evForm'))); markDirty(); };
+$('#evForm').onsubmit = e => { e.preventDefault(); $('#saveEvent').click(); };
+$('#saveEvent').onclick = () => {
+  if (!drafts.etkinlik) return toast('Değişiklik yok');
+  act('api/admin/etkinlik', { method: 'PUT', body: drafts.etkinlik }, 'Etkinlik bilgisi kaydedildi').then(() => { drafts.etkinlik = null; renderAll(); }).catch(() => {});
+};
+
+// Logolar
+function renderLogos() {
+  const L = A.logos;
+  $('#logos').innerHTML = L.length ? L.map((l, i) => `<div class="lg"><div class="im"><img src="logolar/${encodeURIComponent(l.ad)}?v=${A.surum}" alt=""></div>
+    <div class="meta"><span title="${esc(l.ad)}">${i + 1}. ${esc(l.ad)}</span>
+      <button class="ib" data-lmv="-1" data-i="${i}" ${i === 0 ? 'disabled' : ''} title="Öne al">←</button>
+      <button class="ib" data-lmv="1" data-i="${i}" ${i === L.length - 1 ? 'disabled' : ''} title="Arkaya al">→</button>
+      <button class="ib x" data-ldel="${esc(l.ad)}" ${l.silinebilir ? '' : 'disabled title="Sunucudaki public/logolar klasöründen gelir"'} title="Sil">✕</button></div></div>`).join('')
+    : '<p class="muted">Henüz logo yok.</p>';
+}
+$('#logos').onclick = async e => {
+  const b = e.target.closest('button'); if (!b || b.disabled) return;
+  if (b.dataset.lmv) {
+    const names = A.logos.map(l => l.ad), i = +b.dataset.i, j = i + +b.dataset.lmv;
+    [names[i], names[j]] = [names[j], names[i]];
+    act('api/admin/logolar', { method: 'PUT', body: { sira: names } }).catch(() => {});
+  } else if (b.dataset.ldel && await confirmBox('Logoyu sil', `<b>${esc(b.dataset.ldel)}</b> silinsin mi?`, 'Sil', true)) {
+    act('api/admin/logo?ad=' + encodeURIComponent(b.dataset.ldel), { method: 'DELETE' }, 'Logo silindi').catch(() => {});
+  }
+};
+async function uploadLogos(files) {
+  for (const f of files) {
+    if (f.size > 3 * 1024 * 1024) { toast(`${f.name}: 3 MB'tan büyük`, true); continue; }
+    await act('api/admin/logo?ad=' + encodeURIComponent(f.name), { method: 'POST', body: f, headers: { 'Content-Type': f.type || 'application/octet-stream' } }, `${f.name} yüklendi`).catch(() => {});
+  }
+}
+$('#drop').onclick = e => { if (e.target.id !== 'logoFile') $('#logoFile').click(); };
+$('#logoFile').onchange = e => { uploadLogos([...e.target.files]); e.target.value = ''; };
+$('#drop').ondragover = e => { e.preventDefault(); $('#drop').classList.add('over'); };
+$('#drop').ondragleave = () => $('#drop').classList.remove('over');
+$('#drop').ondrop = e => { e.preventDefault(); $('#drop').classList.remove('over'); uploadLogos([...e.dataTransfer.files]); };
+
+// Güvenlik & veri
+function renderSecurity() {
+  $('#pwOrtakInfo').textContent = {
+    panel: 'Özel şifresi olmayan tüm jüriler bu şifreyle girer. Şu anki şifre bu panelden belirlendi.',
+    env: 'Özel şifresi olmayan tüm jüriler bu şifreyle girer. Şu an .env dosyasındaki JURI_SIFRE kullanılıyor; burada belirlediğiniz şifre onun yerine geçer.'
+  }[A.sifre.ortak] || 'Ortak şifre tanımlı değil: özel şifresi olmayan jüriler giriş yapamıyor. Hemen bir şifre belirleyin.';
+  $('#pwAdminInfo').textContent = A.sifre.admin === 'panel'
+    ? 'Yönetici şifresi bu panelden belirlendi.'
+    : 'Şu an .env dosyasındaki ADMIN_SIFRE kullanılıyor; burada belirlediğiniz şifre onun yerine geçer.';
+}
+function pwForm(form, a, b, tur, msg) {
+  $(form).onsubmit = e => {
+    e.preventDefault();
+    if ($(a).value !== $(b).value) return toast('Şifreler aynı değil', true);
+    act('api/admin/sifre', { method: 'PUT', body: { tur, sifre: $(a).value } }, msg).then(() => $(form).reset()).catch(() => {});
+  };
+}
+pwForm('#pwOrtak', '#pwO1', '#pwO2', 'ortak', 'Ortak jüri şifresi değişti');
+pwForm('#pwAdmin', '#pwA1', '#pwA2', 'admin', 'Yönetici şifresi değişti');
+
+$('#killAll').onclick = async () => {
+  if (await confirmBox('Tüm jüri oturumları kapansın mı?', 'Bütün jüriler yeniden giriş yapmak zorunda kalacak.', 'Kapat', true))
+    act('api/admin/oturum', { method: 'DELETE' }, 'Tüm jüri oturumları kapatıldı').catch(() => {});
+};
+
+$('#backup').onclick = async () => {
+  try {
+    const r = await fetch('api/admin/yedek', { headers: { Authorization: 'Bearer ' + token } });
+    if (!r.ok) throw new Error((await r.json().catch(() => ({}))).error || 'Yedek alınamadı');
+    const name = (r.headers.get('Content-Disposition') || '').match(/filename="([^"]+)"/)?.[1] || 'juri-yedek.json';
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(await r.blob()); a.download = name; a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+  } catch (e) { toast(e.message, true); }
+};
+$('#restoreBtn').onclick = () => $('#restoreFile').click();
+$('#restoreFile').onchange = async e => {
+  const f = e.target.files[0]; e.target.value = ''; if (!f) return;
+  let data;
+  try { data = JSON.parse(await f.text()); } catch { return toast('Dosya okunamadı', true); }
+  const n = Array.isArray(data.oylar) ? data.oylar.length : 0;
+  if (!await confirmBox('Yedekten geri yükle', `<b>${esc(f.name)}</b>${data.zaman ? ` (${new Date(data.zaman).toLocaleString('tr-TR')})` : ''} geri yüklenecek: ${n} oy.<br>Mevcut ayarlar ve <b>tüm oylar</b> bu dosyadakilerle değiştirilecek.`, 'Geri yükle', true)) return;
+  act('api/admin/geri-yukle', { method: 'POST', body: data }).then(d => {
+    Object.keys(drafts).forEach(k => drafts[k] = null); renderAll();
+    toast(d.atlanan ? `Geri yüklendi (${d.atlanan} geçersiz oy atlandı)` : 'Geri yüklendi');
+  }).catch(() => {});
+};
+
+$('#reset').onclick = () => modal('Tüm oyları sıfırla',
+  `<p>${A.oySayisi} oy kalıcı olarak silinecek. Onaylamak için aşağıya <b>SIFIRLA</b> yazın.</p><input id="rsTxt" autocomplete="off">`,
+  [{ text: 'Vazgeç', cls: 'ghost' }, { text: 'Oyları sil', cls: 'danger solid', value: true }], async () => {
+    if ($('#rsTxt').value.trim().toLocaleUpperCase('tr') !== 'SIFIRLA') throw new Error('Onay için SIFIRLA yazın');
+    await act('api/admin/sifirla', { method: 'POST', body: { onay: 'SIFIRLA' } }, 'Tüm oylar silindi');
+  });
+
+if (token) start().catch(() => logout());
+</script>
+</body>
+</html>
